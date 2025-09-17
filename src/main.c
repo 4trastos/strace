@@ -3,8 +3,9 @@
 
 int main(int argc, char **argv)
 {
-    pid_t   pid;
-    int     status;
+    t_registers registr;
+    int         status;
+    pid_t       pid;
 
     if (argc < 2)
     {

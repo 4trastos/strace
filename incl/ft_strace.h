@@ -13,6 +13,11 @@
 # include <errno.h>
 # include <signal.h>
 
+typedef struct s_registers
+{
+
+}   t_registers;
+
 //*** main functions ***/
 
 
