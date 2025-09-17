@@ -1,5 +1,5 @@
-#include "incl/ft_strace.h"
-#include "lib/printf/ft_printf.h"
+#include "../incl/ft_strace.h"
+#include "../lib/printf/ft_printf.h"
 
 int main(int argc, char **argv)
 {
@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 
     if (argc < 2)
     {
-        ft_printf("Use: %s <comand> [args...]\n", argv[0]);
+        ft_printf("❌ Use: %s <comand> [args...] ❌\n", argv[0]);
         return (1);
     }
 
@@ -23,74 +23,80 @@ int main(int argc, char **argv)
     {
         // Estamos en el proceso hijo (el programa que vamos a tracear).
         
-        // Paso 2: El hijo se marca a sí mismo para ser traceado por su padre.
-        // PTRACE_TRACEME hace que el kernel notifique al padre de eventos como execve().
-        // Manejar el error si ptrace() falla.
-        if (ft_ptrace(PTRACE_TRACEME, pid, NULL, NULL) == -1)
-        {
-            ft_printf("Error: ptrace TRACEME ( %s )\n", errno);
-            exit(1);
-        }
+        // Proceso hijo: no usa PTRACE_TRACEME.
+        // Simplemente se detiene y espera a que el padre se apode de él.
+        kill(getpid(), SIGSTOP);
 
-        // Paso 3: El hijo se reemplaza con el programa del usuario.
-        // La familia de funciones exec (en este caso execvp) se usa para cargar
+        // Paso 2: El hijo se reemplaza con el programa del usuario.
+        // La familia de funciones exec se usa para cargar
         // y ejecutar el nuevo programa, manteniendo el mismo PID.
-        // El argv+1 es para pasar el comando y sus argumentos, ignorando nuestro
-        // propio nombre de programa (ft_strace).
         execvp(argv[1], &argv[1]);
 
         // Si execvp() regresa, significa que hubo un error (el programa no se pudo ejecutar).
-        ft_printf("Error: execvp ( %s )\n", errno);
+        ft_printf("Error: execvp (errno %d)\n", errno);
         exit(1);
     }
     else
     {
-        // Estamos en el proceso padre (nuestro ft_strace).
+        // Proceso padre: nuestro ft_strace.
 
-        // El padre espera a que el hijo se detenga después del execve.
-        // WNOHANG para evitar que se bloquee si el hijo ya ha salido.
-        // WUNTRACED para que nos notifique cuando el hijo se detiene por ptrace.
-        waitpid(pid, &status, WUNTRACED);
+        // Paso 3: El padre se apodera del proceso hijo.
+        // PTRACE_SEIZE es la forma moderna de adjuntarse a un proceso.
+        if (ptrace(PTRACE_SEIZE, pid, NULL, NULL) == -1)
+        {
+            ft_printf("Error: ptrace SEIZE (errno %d)\n", errno);
+            return (1);
+        }
+
+        // Se usa PTRACE_SETOPTIONS para habilitar opciones como
+        // PTRACE_O_TRACESYSGOOD, que es fundamental para
+        // distinguir las paradas de syscall de otras señales.
+        if (ptrace(PTRACE_SETOPTIONS, pid, NULL, PTRACE_O_TRACESYSGOOD) == -1)
+        {
+            ft_printf("Error: ptrace SETOPTIONS (errno %d)\n", errno);
+            return (1);
+        }
+
+        // El padre espera la parada inicial del hijo.
+        waitpid(pid, &status, 0);
 
         // Paso 4: Bucle principal de traceo.
-        // Continúa mientras el proceso hijo no haya terminado.
         while (1)
         {
             // Paso 5: El padre le dice al hijo que continúe hasta la siguiente llamada al sistema.
             // PTRACE_SYSCALL hace que el hijo se detenga al entrar y salir de cada syscall.
-            // Maneja el error si ptrace() falla.
-            if (ft_ptrace(PTRACE_SYSCALL, pid, NULL, NULL) == -1)
+            if (ptrace(PTRACE_SYSCALL, pid, NULL, NULL) == -1)
             {
                 if (errno == ESRCH)
                     break;
-                ft_printf("Error: ptrace SYSCALL ( %s)\n", errno);
+                ft_printf("Error: ptrace SYSCALL (errno %d)\n", errno);
                 break;
             }
 
             // El padre espera a que el hijo se detenga de nuevo.
             waitpid(pid, &status, 0);
 
-            // Verifica si el hijo ha terminado su ejecución.
+            // Se verifica si el hijo ha terminado su ejecución.
             if (WIFEXITED(status) || WIFSIGNALED(status))
-                break;      // Si el hijo terminó, salimos del bucle.
-            
-            // Paso 6: Obtiene los registros para decodificar la syscall.
-            // Para esto, se necesita una estructura para guardar los registros.
+            {
+                ft_printf("+++ Exited with status %d +++\n", WEXITSTATUS(status));
+                break;
+            }
+
+            // Aquí se debe usar PTRACE_GETREGSET para obtener los registros
+            // y decodificar la llamada al sistema.
+            // Para eso, se necesita una estructura para guardar los registros.
             // struct user_regs_struct regs;
             // ptrace(PTRACE_GETREGS, pid, NULL, &regs);
 
+            // Y manejar las señales con PTRACE_GETSIGINFO
+            // para cumplir con las reglas del proyecto.
+
             // Paso 7: Decodificar la syscall y sus argumentos.
-            // Aquí es donde se necesita la tabla de syscalls para mapear
-            // el número de syscall a su nombre y leer los argumentos.
             
             // Paso 8: Imprime la salida formateada.
-            // printf("syscall_name(arg1, arg2, ...) = return_value\n");
-
-            // No olvidar manejar las señales que recibe el proceso hijo.
-            // Se puede usar ptrace(PTRACE_GETSIGINFO, ...) para obtener detalles
-            // de la señal y reportarla.
+            // ft_printf("syscall_name(arg1, arg2, ...) = return_value\n");
         }
-        
     }
 
     return (0);
