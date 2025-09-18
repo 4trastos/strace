@@ -90,6 +90,8 @@ Este documento es una traducción del `subject` original de 42 y resume los punt
 - **`PTRACE_LISTEN`:** Permite que un tracer se adjunte a un proceso sin interferir en su ejecución, solo para eventos futuros.
 - **`PTRACE_GETSIGINFO`:** Obtiene información detallada sobre la señal que ha causado la detención del tracee.
 
+---
+
 # lista completa de filtros de errores para strace y para qué sirve cada uno:
 
 ## Filtros Básicos de Errores:
