@@ -89,3 +89,145 @@ Este documento es una traducción del `subject` original de 42 y resume los punt
 - **`PTRACE_SEIZE`:** Adjunta a un proceso sin detenerlo inmediatamente, lo que puede ser útil para evitar condiciones de carrera.
 - **`PTRACE_LISTEN`:** Permite que un tracer se adjunte a un proceso sin interferir en su ejecución, solo para eventos futuros.
 - **`PTRACE_GETSIGINFO`:** Obtiene información detallada sobre la señal que ha causado la detención del tracee.
+
+# lista completa de filtros de errores para strace y para qué sirve cada uno:
+
+## Filtros Básicos de Errores:
+
+```bash
+# Todas las llamadas que fallaron (retornaron -1)
+grep "= -1" /tmp/debug.log
+
+# Muestra el código de error específico
+grep -o "errno [0-9]*" /tmp/debug.log
+
+# Llamadas que fueron interrumpidas por señales
+grep "EINTR" /tmp/debug.log
+```
+
+## Filtros por Códigos de Error Específicos:
+
+```bash
+# Error de permiso denegado
+grep "EPERM" /tmp/debug.log        # Operation not permitted
+
+# Acceso denegado
+grep "EACCES" /tmp/debug.log       # Permission denied
+
+# Archivo o directorio no existe
+grep "ENOENT" /tmp/debug.log       # No such file or directory
+
+# Entrada/salida error
+grep "EIO" /tmp/debug.log          # Input/output error
+
+# Dispositivo no disponible
+grep "ENODEV" /tmp/debug.log       # No such device
+
+# No hay espacio en dispositivo
+grep "ENOSPC" /tmp/debug.log       # No space left on device
+
+# Memoria insuficiente
+grep "ENOMEM" /tmp/debug.log       # Out of memory
+
+# Recurso temporalmente no disponible
+grep "EAGAIN" /tmp/debug.log       # Resource temporarily unavailable
+
+# Archivo existe
+grep "EEXIST" /tmp/debug.log       # File exists
+
+# No es un directorio
+grep "ENOTDIR" /tmp/debug.log      # Not a directory
+
+# Es un directorio
+grep "EISDIR" /tmp/debug.log       # Is a directory
+
+# Argumento inválido
+grep "EINVAL" /tmp/debug.log       # Invalid argument
+
+# Demasiados archivos abiertos
+grep "EMFILE" /tmp/debug.log       # Too many open files
+
+# Sistema de archivos de solo lectura
+grep "EROFS" /tmp/debug.log        # Read-only file system
+
+# Dispositivo o recurso ocupado
+grep "EBUSY" /tmp/debug.log        # Device or resource busy
+
+# Timeout excedido
+grep "ETIMEDOUT" /tmp/debug.log    # Connection timed out
+
+# Conexión rechazada
+grep "ECONNREFUSED" /tmp/debug.log # Connection refused
+```
+
+## Comandos Avanzados para Análisis de Errores:
+
+```bash
+# Contar frecuencia de errores
+grep -o "errno [0-9]*" /tmp/debug.log | awk '{print $2}' | sort | uniq -c | sort -nr
+
+# Ver errores con su descripción
+grep "= -1" /tmp/debug.log | head -20
+
+# Errores en operaciones de red
+grep -E "ECONN|ETIMEDOUT|ENETUNREACH" /tmp/debug.log
+
+# Errores en operaciones de archivos
+grep -E "ENOENT|EACCES|EROFS|ENOSPC" /tmp/debug.log
+
+# Errores de memoria
+grep -E "ENOMEM|EFAULT" /tmp/debug.log
+```
+
+## Script Útil para Analizar Errores:
+
+```bash
+#!/bin/bash
+# Analizador de errores de strace
+LOG_FILE="/tmp/debug.log"
+
+echo "=== ANÁLISIS DE ERRORES EN STRACE ==="
+echo ""
+
+# Total de llamadas
+total_calls=$(wc -l < "$LOG_FILE")
+echo "Total de llamadas: $total_calls"
+
+# Llamadas con error
+error_calls=$(grep -c "= -1" "$LOG_FILE")
+echo "Llamadas con error: $error_calls"
+echo "Porcentaje de error: $(echo "scale=2; ($error_calls * 100) / $total_calls" | bc)%"
+echo ""
+
+# Top 10 errores más frecuentes
+echo "Top 10 errores más frecuentes:"
+grep -o "errno [0-9]*" "$LOG_FILE" | awk '{print $2}' | sort | uniq -c | sort -nr | head -10
+echo ""
+
+# Errores por tipo de llamada
+echo "Errores por tipo de llamada:"
+grep "= -1" "$LOG_FILE" | awk '{print $1}' | sort | uniq -c | sort -nr
+```
+
+## Para Capturar Mejor la Información de Errores:
+
+```bash
+# Usa strace con opciones que muestran mejor los errores
+strace -e verbose=all -s 1024 -o /tmp/debug.log <binary>
+
+# O para ver tiempos y errores
+strace -T -e trace=all -o /tmp/debug.log <binary>
+```
+
+## Conversión de Códigos de Error:
+
+Si quieres entender qué significa cada código de error:
+```bash
+# Usa errno para descifrar códigos
+errno 13    # EACCES
+errno 2     # ENOENT
+errno 12    # ENOMEM
+
+# O ver todos los códigos
+errno -l
+```

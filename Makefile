@@ -2,7 +2,7 @@ NAME = ft_strace
 CC = gcc
 CFLAGS = -Wall -Werror -Wextra -g
 RM = rm -f
-LIB = -lfprintf
+LIB = -lftprintf
 
 SRC = src/main.c src/decoder.c
 OBJS = $(SRC:.c=.o)

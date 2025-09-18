@@ -3,7 +3,7 @@
 
 int main(int argc, char **argv)
 {
-    t_registers registr;
+    //t_registers registr;
     int         status;
     pid_t       pid;
 
