@@ -89,5 +89,3 @@ Este documento es una traducción del `subject` original de 42 y resume los punt
 - **`PTRACE_SEIZE`:** Adjunta a un proceso sin detenerlo inmediatamente, lo que puede ser útil para evitar condiciones de carrera.
 - **`PTRACE_LISTEN`:** Permite que un tracer se adjunte a un proceso sin interferir en su ejecución, solo para eventos futuros.
 - **`PTRACE_GETSIGINFO`:** Obtiene información detallada sobre la señal que ha causado la detención del tracee.
-
-Este es un buen punto de partida para tu proyecto. Si necesitas más detalles o ayuda con la implementación, házmelo saber.

@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 
     if (argc < 2)
     {
-        ft_printf("❌ Use: %s <comand> [args...] ❌\n", argv[0]);
+        ft_printf("❌ Use: %s must have PROG [ARGS] or -c [ARGS] ❌\n", argv[0]);
         return (1);
     }
 
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
             // Se verifica si el hijo ha terminado su ejecución.
             if (WIFEXITED(status) || WIFSIGNALED(status))
             {
-                ft_printf("+++ Exited with status %d +++\n", WEXITSTATUS(status));
+                ft_printf("+++ Exited with %d +++\n", WEXITSTATUS(status));
                 break;
             }
 
