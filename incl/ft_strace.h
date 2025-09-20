@@ -14,10 +14,16 @@
 # include <sys/uio.h>
 # include <errno.h>
 # include <signal.h>
+# include <fcntl.h>
+# include <elf.h>
+
+# define    ARCH_64 64
+# define    ARCH_32 32
 
 typedef struct s_syscall_info
 {
-    long    nunber;
+    int     arch;
+    long    syscall_numb;
     long    return_value;
     long    arguments[6];
     char    *name;
@@ -32,7 +38,7 @@ typedef struct s_signals
 
 //*** main functions ***/
 
-
+int detect_arch(const char *path);
 
 //*** CPU logic ***/
 
@@ -40,10 +46,10 @@ typedef struct s_signals
 
 //*** comunications & signals ***/
 
-void    reading_regs(struct user_regs_struct *regs, t_syscall_info *syscall_info);
-void    reading_signals(siginfo_t *siginfo, t_signals *signals);
+void    reading_regs(pid_t pid, t_syscall_info *syscall_info);
+/* void    reading_signals(siginfo_t *siginfo, t_signals *signals);
 void    reading_return_value(struct user_regs_struct *regs, t_syscall_info *syscall_info);
-
+ */
 //*** auxiliary functions ***/
 
 #endif

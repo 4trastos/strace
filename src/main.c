@@ -5,8 +5,6 @@
 
 int main(int argc, char **argv)
 {
-    struct user_regs_struct regs;
-    struct iovec            iov;
     siginfo_t               siginfo;
     t_syscall_info          syscall_info;
     t_signals               signals;
@@ -18,6 +16,14 @@ int main(int argc, char **argv)
         ft_printf("❌ Use: %s must have PROG [ARGS] or -c [ARGS] ❌\n", argv[0]);
         return (1);
     }
+
+    if (detect_arch(argv[1]) == -1)
+    {
+        ft_printf("Error: Unrecognized architecture \n");
+        exit (1);
+    }
+
+    syscall_info.arch = detect_arch(argv[1]);
     pid = fork();
     if (pid == -1)
     {
@@ -36,13 +42,11 @@ int main(int argc, char **argv)
     else
     {
         waitpid(pid, &status, 0);
-        // Paso 3: El padre se apodera del proceso hijo.
         if (ptrace(PTRACE_SEIZE, pid, NULL, NULL) == -1)
         {
             ft_printf("Error: ptrace SEIZE ( %s )\n", strerror(errno));
             return (1);
         }
-        // Paso 4: Se usa PTRACE_SETOPTIONS para habilitar opciones.
         if (ptrace(PTRACE_SETOPTIONS, pid, NULL, PTRACE_O_TRACESYSGOOD) == -1)
         {
             ft_printf("Error: ptrace SETOPTIONS ( %s )\n", strerror(errno));
@@ -65,18 +69,35 @@ int main(int argc, char **argv)
                 break;
             }
 
-            if (WIFSTOPPED(status) && WSTOPSIG(status) != (SIGTRAP | 0x80))
+            if (WIFSTOPPED(status))
             {
-                ptrace(PTRACE_GETSIGINFO, pid, NULL, &siginfo);
-                reading_signals(&siginfo, &signals);
-                ptrace(PTRACE_SYSCALL, pid, NULL, WSTOPSIG(status)); // reinyecta señal
-                continue;
+                if (WSTOPSIG(status) == (SIGTRAP | 0x80))
+                {
+                    // Syscall event
+                    reading_regs(pid, &syscall_info);
+                }
+                else
+                {
+                    // Signal event
+                    if (ptrace(PTRACE_GETSIGINFO, pid, NULL, &siginfo) == -1)
+                    {
+                        ft_printf("Error: GetSigInfo ( %s )\n", strerror(errno));
+                        exit (1);
+                    }
+                    reading_signals(&siginfo, &signals);
+                    ptrace(PTRACE_SYSCALL, pid, NULL, WSTOPSIG(status));  // reinyecta señal
+                    continue;
+                }
             }
 
-            ptrace(PTRACE_GETREGSET, pid, NULL, &regs);
-            reading_regs(&regs, &syscall_info);
-
-            ptrace(PTRACE_SYSCALL, pid, NULL, NULL);
+            // Segundo paso → salida de syscall
+            if (ptrace(PTRACE_SYSCALL, pid, NULL, NULL) == -1)
+            {
+                if (errno == ESRCH)
+                    break;
+                ft_printf("Error: ptrace SYSCALL ( %s )\n", strerror(errno));
+                break;
+            }
             waitpid(pid, &status, 0);
             if (WIFEXITED(status) || WIFSIGNALED(status))
             {
@@ -84,8 +105,7 @@ int main(int argc, char **argv)
                 break;
             }
             
-            ptrace(PTRACE_GETREGSET, pid, NULL, &regs);
-            reading_return_value(&regs, &syscall_info);
+            reading_regs(pid, &syscall_info);
             ft_printf("syscall_name(arg1, arg2, ...) = return_value\n");
         }
     }
