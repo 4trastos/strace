@@ -1,14 +1,23 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
+char    *ft_findpath(char **envp)
+{
+    while (ft_strncmp("PATH", *envp, 4))
+        envp++;
+    return (*envp + 5);
+}
+
 int detect_arch(const char *path)
 {
-    Elf64_Ehdr ehdr;
+    Elf64_Ehdr  ehdr;
+
     int fd = open(path, O_RDONLY);
     if (fd < 0)
         return (-1);
     read(fd, &ehdr, sizeof(ehdr));
     close(fd);
+    
     if (ehdr.e_ident[EI_CLASS] == ELFCLASS64)
         return (ARCH_64);
     else if (ehdr.e_ident[EI_CLASS] == ELFCLASS32)
@@ -18,20 +27,21 @@ int detect_arch(const char *path)
 
 void reading_regs(pid_t pid, t_syscall_info *syscall_info)
 {
-    struct iovec            iov;
-    struct user_regs_struct regs;
+    struct iovec                iov;
+    struct user_regs_struct     regs;
+    struct user_regs_struct_32  regist;
 
-    iov.iov_base = &regs;
-    iov.iov_len = sizeof(regs);
-
-    if (ptrace(PTRACE_GETREGSET, pid, (void *)NT_PRSTATUS, &iov) == -1)
-    {
-        ft_printf("Error: GETREGSET ( %s )\n", strerror(errno));
-        return;
-    }
-
+    
     if (syscall_info->arch == ARCH_64)
     {
+        iov.iov_base = &regs;
+        iov.iov_len = sizeof(regs);
+    
+        if (ptrace(PTRACE_GETREGSET, pid, (void *)NT_PRSTATUS, &iov) == -1)
+        {
+            ft_printf("Error: GETREGSET ( %s )\n", strerror(errno));
+            return;
+        }
         syscall_info->syscall_numb = regs.orig_rax;
         syscall_info->arguments[0] = regs.rdi;
         syscall_info->arguments[1] = regs.rsi;
@@ -40,9 +50,27 @@ void reading_regs(pid_t pid, t_syscall_info *syscall_info)
         syscall_info->arguments[4] = regs.r9;
         syscall_info->arguments[5] = regs.r8;
     }
-    else
+    if (syscall_info->arch == ARCH_32)
     {
-        // 32bits
+        iov.iov_base = &regist;
+        iov.iov_len = sizeof(regist);
+
+        if (ptrace(PTRACE_GETREGSET, pid, (void *)NT_PRSTATUS, &iov) == -1)
+        {
+            if (ptrace(PTRACE_GETREGSET, pid, NULL, &regist) == -1)
+            {
+                ft_printf("Error: GETREGS 32-bit ( %s )\n", strerror(errno));
+                return;
+            }
+        }
+
+        syscall_info->syscall_numb = regist.orig_eax;
+        syscall_info->arguments[0] = regist.ebx;
+        syscall_info->arguments[1] = regist.ecx;
+        syscall_info->arguments[2] = regist.edx;
+        syscall_info->arguments[3] = regist.esi;
+        syscall_info->arguments[4] = regist.edi;
+        syscall_info->arguments[5] = regist.ebp;
     }
 }
 

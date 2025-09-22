@@ -4,7 +4,7 @@ CFLAGS = -Wall -Werror -Wextra -g
 RM = rm -f
 LIB = -lftprintf
 
-SRC = src/main.c src/decoder.c
+SRC = src/main.c src/decoder.c aux/auxliars.c
 OBJS = $(SRC:.c=.o)
 
 FT_PRINTF_DIR = lib/printf

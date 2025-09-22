@@ -3,13 +3,14 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
-int main(int argc, char **argv)
+int main(int argc, char **argv, char **envp)
 {
     siginfo_t               siginfo;
     t_syscall_info          syscall_info;
-    t_signals               signals;
+    //t_signals               signals;
     pid_t                   pid;
     int                     status;
+    int                     i = 0;
 
     if (argc < 2)
     {
@@ -23,7 +24,10 @@ int main(int argc, char **argv)
         exit (1);
     }
 
-    syscall_info.arch = detect_arch(argv[1]);
+    syscall_info.path = ft_findpath(envp);
+    syscall_info.command_path = ft_split(syscall_info.path, ":");
+    syscall_info.binary = get_binary(syscall_info.command_path, argv[1]);
+    syscall_info.arch = detect_arch(syscall_info.path);
     pid = fork();
     if (pid == -1)
     {
@@ -75,6 +79,8 @@ int main(int argc, char **argv)
                 {
                     // Syscall event
                     reading_regs(pid, &syscall_info);
+                    ft_printf("Estos son los registros: ( %d )", syscall_info.arguments[i]);
+                    i++;
                 }
                 else
                 {
@@ -84,7 +90,7 @@ int main(int argc, char **argv)
                         ft_printf("Error: GetSigInfo ( %s )\n", strerror(errno));
                         exit (1);
                     }
-                    reading_signals(&siginfo, &signals);
+                    //reading_signals(&siginfo, &signals);
                     ptrace(PTRACE_SYSCALL, pid, NULL, WSTOPSIG(status));  // reinyecta señal
                     continue;
                 }
