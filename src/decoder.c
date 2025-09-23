@@ -89,6 +89,8 @@ void reading_entry_regs(pid_t pid, t_syscall_info *syscall_info)
         syscall_info->arguments[4] = regist.edi;
         syscall_info->arguments[5] = regist.ebp;
     }
+    // for (int i = 0; i < 6; i++)
+    //     ft_printf("[DEBUG] Registros de la CPU: ( %p )\n", syscall_info->arguments[i]);
 }
 
 void    reading_exit_regs(pid_t pid, t_syscall_info *syscall_info)

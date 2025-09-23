@@ -65,6 +65,7 @@ typedef struct s_signals
 char    *ft_findpath(char **envp);
 int     detect_arch(char *path);
 char    *get_binary(char **command_path, char *command_arg);
+void    start_tracing(pid_t child, t_signals *syscall_info);
 
 //*** comunications & signals ***/
 
