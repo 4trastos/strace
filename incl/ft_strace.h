@@ -81,8 +81,7 @@ void    start_tracing(pid_t child, t_signals *syscall_info);
 
 void    reading_entry_regs(pid_t pid, t_syscall_info *syscall_info);
 void    reading_exit_regs(pid_t pid, t_syscall_info *syscall_info);
-/* void    reading_signals(siginfo_t *siginfo, t_signals *signals);
- */
+
 //*** auxiliary functions ***/
 
 int     ft_strncmp(char *src, char *str, int numb);

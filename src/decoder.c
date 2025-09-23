@@ -127,10 +127,3 @@ void    reading_exit_regs(pid_t pid, t_syscall_info *syscall_info)
         syscall_info->return_value = regist.eax;
     }
 }
-
-/* void    reading_signals(siginfo_t *siginfo, t_signals *signals)
-{
-
-}
-
- */
