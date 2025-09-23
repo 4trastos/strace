@@ -1,60 +1,96 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
-static char **free_str(char **str)
+char	**ft_empty_split(void)
 {
-    int i = 0;
-    while (str[i])
-    {
-        free(str[i]);
-        i++;
-    }
-    free(str);
-    return (NULL);
+	char	**aux;
+
+	aux = (char **)malloc(sizeof(char *));
+	if (!aux)
+		return (NULL);
+	aux[0] = NULL;
+	return (aux);
 }
 
-static int  ft_counts(char *str, char c)
+char	*ft_strdup_custom(const char *s, size_t n)
 {
-    int count = 0;
-    int i = 0;
+	char	*dst;
+	size_t	i;
 
-    while (str[i] != '\0')
-    {
-        if (str[i] == '\0')
-            return (count);
-        if (str[i] != c && (str[i + 1] == c || str[i + 1] == '\0'))
-            count++;
-        if (str[i] == c)
-            i++;
-        i++;
-    }
-    return (count);
+	i = 0;
+	if (n == 0)
+		return (NULL);
+	dst = (char *)malloc(sizeof(char) * (n + 1));
+	if (dst == 0)
+		return (NULL);
+	while (i < n)
+	{
+		dst[i] = s[i];
+		i++;
+	}
+	dst[i] = '\0';
+	return (dst);
 }
 
-char **ft_split(char *str, char c)
+char	**ft_free_str(char **aux)
 {
-    char    **new;
-    int     i = 0;
-    int     x = 0;
-    int     memo;
+	int	i;
 
-    if (!str || (*str = '\0'))
-        return (NULL);
-    
-    new = (char **)malloc(sizeof(char *) * (ft_counts(str, c) + 1));
-    if (!new)
-        return (NULL);
-    while (x < ft_counts(str, c) && str[i] != '\0')
-    {
-        while (str[i] == c)
-            i++;
-        memo = i;
-        while (str[i] != c && str[i] != '\0')
-            i++;
-        new[x] = ft_strdup(&str[memo], i - memo);
-        if (new[x++] == NULL)
-            return (free_str(new));
-    }
-    new[x] = NULL;
-    return(new);
+	i = 0;
+	while (aux[i])
+	{
+		free(aux[i]);
+		i++;
+	}
+	free(aux);
+	return (NULL);
+}
+
+int	ft_countc(char const *s, char c)
+{
+	int	i;
+	int	x;
+
+	i = 0;
+	x = 0;
+	while (s[i] != '\0')
+	{
+		if (s[i] == c)
+			i++;
+		if (s[i] == '\0')
+			return (x);
+		if (s[i] != c && (s[i + 1] == c || s[i + 1] == '\0'))
+			x++;
+		i++;
+	}
+	return (x);
+}
+
+char	**ft_split(char *s, char c)
+{
+	char	**aux;
+	int		i;
+	int		j;
+	int		memo;
+
+	i = 0;
+	j = 0;
+	if (!s || *s == '\0')
+		return (ft_empty_split());
+	aux = (char **)malloc(sizeof(char *) * (ft_countc(s, c) + 1));
+	if (!aux)
+		return (NULL);
+	while (j < ft_countc(s, c) && s[i] != '\0')
+	{
+		while (s[i] == c)
+			i++;
+		memo = i;
+		while (s[i] != c && s[i] != '\0')
+			i++;
+		aux[j] = ft_strdup_custom(&s[memo], i - memo);
+		if (aux[j++] == NULL)
+			return (ft_free_str(aux));
+	}
+	aux[j] = NULL;
+	return (aux);
 }

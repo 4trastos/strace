@@ -5,8 +5,8 @@
 
 int main(int argc, char **argv, char **envp)
 {
-    siginfo_t               siginfo;
     t_syscall_info          syscall_info;
+    siginfo_t               siginfo;
     //t_signals               signals;
     pid_t                   pid;
     int                     status;
@@ -18,16 +18,21 @@ int main(int argc, char **argv, char **envp)
         return (1);
     }
 
-    if (detect_arch(argv[1]) == -1)
+    ft_printf("[DEBUG] PID de proceso del binario: ( %d )\n", pid = getpid());
+    syscall_info.path = ft_findpath(envp);
+    ft_printf("[DEBUG] Path encontada: ( %s )\n", syscall_info.path);
+    syscall_info.command_path = ft_split(syscall_info.path, ':');
+    syscall_info.binary = get_binary(syscall_info.command_path, argv[1]);
+    ft_printf("[DEBUG] Binario encontado: ( %s )\n", syscall_info.binary);
+    syscall_info.arch = detect_arch(syscall_info.binary);
+    ft_printf("[DEBUG] Architectura detectada: ( %d )\n", syscall_info.arch);
+    
+    if (syscall_info.arch == -1)
     {
         ft_printf("Error: Unrecognized architecture \n");
         exit (1);
     }
 
-    syscall_info.path = ft_findpath(envp);
-    syscall_info.command_path = ft_split(syscall_info.path, ":");
-    syscall_info.binary = get_binary(syscall_info.command_path, argv[1]);
-    syscall_info.arch = detect_arch(syscall_info.path);
     pid = fork();
     if (pid == -1)
     {
@@ -36,10 +41,12 @@ int main(int argc, char **argv, char **envp)
     }
     if (pid == 0)
     {
+        //ft_printf("[DEBUG] Identificador fork: ( %d )\n", pid);
+        //ft_printf("[DEBUG] Dentro del proceso hijo. PIP ( %d )\n", pid = getpid());
         kill(getpid(), SIGSTOP);
-        if (execvp(argv[1], &argv[1]) == -1)
+        if (execve(syscall_info.binary, &argv[1], envp) == -1)
         {
-            ft_printf("Error: execvp ( %s )\n", strerror(errno));
+            ft_printf("Error: execve ( %s )\n", strerror(errno));
             exit(1);
         }
     }
@@ -77,8 +84,8 @@ int main(int argc, char **argv, char **envp)
             {
                 if (WSTOPSIG(status) == (SIGTRAP | 0x80))
                 {
-                    // Syscall event
-                    reading_regs(pid, &syscall_info);
+                    // Syscall event → syscall entry
+                    reading_entry_regs(pid, &syscall_info);
                     ft_printf("Estos son los registros: ( %d )", syscall_info.arguments[i]);
                     i++;
                 }
@@ -96,7 +103,7 @@ int main(int argc, char **argv, char **envp)
                 }
             }
 
-            // Segundo paso → salida de syscall
+            // Segundo paso → salida de syscall_exit
             if (ptrace(PTRACE_SYSCALL, pid, NULL, NULL) == -1)
             {
                 if (errno == ESRCH)
@@ -111,8 +118,8 @@ int main(int argc, char **argv, char **envp)
                 break;
             }
             
-            reading_regs(pid, &syscall_info);
-            ft_printf("syscall_name(arg1, arg2, ...) = return_value\n");
+            reading_exit_regs(pid, &syscall_info);
+            ft_printf("syscall_name(...) = %ld\n", syscall_info.return_value);
         }
     }
 

@@ -63,19 +63,21 @@ typedef struct s_signals
 //*** CPU logic ***/
 
 char    *ft_findpath(char **envp);
-int     etect_arch(const char *path);
+int     detect_arch(char *path);
+char    *get_binary(char **command_path, char *command_arg);
 
 //*** comunications & signals ***/
 
-void    reading_regs(pid_t pid, t_syscall_info *syscall_info);
+void    reading_entry_regs(pid_t pid, t_syscall_info *syscall_info);
+void    reading_exit_regs(pid_t pid, t_syscall_info *syscall_info);
 /* void    reading_signals(siginfo_t *siginfo, t_signals *signals);
-void    reading_return_value(struct user_regs_struct *regs, t_syscall_info *syscall_info);
  */
 //*** auxiliary functions ***/
 
-int     ft_strncmp(const char *s1, const char *s2, size_t len);
+int     ft_strncmp(char *src, char *str, int numb);
 char    **ft_split(char *str, char c);
-size_t  len(char *str);
+size_t  ft_strlen(char *str);
 char    *ft_strdup(char *str, int len);
+char    *ft_strjoin(char *str1, char *str2);
 
 #endif

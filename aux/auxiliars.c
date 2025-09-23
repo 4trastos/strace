@@ -1,15 +1,33 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
-char    *get_binary(char **str, char *find)
+char    *ft_strjoin(char *str1, char *str2)
 {
-    char    *aux;
-    char    *command;
+    char    *new;
+    size_t  len;
+    size_t  i = 0;
+    size_t  j = 0;
 
-    return (command);
+    len = ft_strlen(str1) + ft_strlen(str2);
+    new = malloc(len + 1);
+    if (!new)
+        return (NULL);
+    while (str1[i] != '\0')
+    {
+        new[i] = str1[i];
+        i++;
+    }
+    while (str2[j])
+    {
+        new[i] = str2[j];
+        i++;
+        j++;
+    }
+    new[i] = '\0';
+    return (new);
 }
 
-size_t  len(char *str)
+size_t  ft_strlen(char *str)
 {
     size_t  len;
 
@@ -19,17 +37,16 @@ size_t  len(char *str)
     return (len);
 }
 
-int ft_strncmp(const char *s1, const char *s2, size_t len)
+int	ft_strncmp(char *src, char *str, int numb)
 {
-    size_t i = 0;
-
-    while ((s1[i] != '\0' || s2[i] != '\0') && i < len)
-    {
-        if (s1[i] != s2[i])
-            return ((char)s1[i] - (char)s2[i]);
-        i++;
-    }
-    return (0);   
+	int	i = 0;
+	while ((src[i] != '\0' || str[i] != '\0') && i < numb)
+	{
+		if (src[i] != str[i])
+			return ((const unsigned char)src[i] - (const unsigned char)str[i]);
+		i++;
+	}
+	return (0);
 }
 
 char    *ft_strdup(char *str, int len)

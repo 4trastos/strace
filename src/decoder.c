@@ -1,6 +1,24 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
+char    *get_binary(char **command_path, char *command_arg)
+{
+    char    *aux;
+    char    *exe;
+
+    while (*command_path)
+    {
+        aux = ft_strjoin(*command_path, "/");
+        exe = ft_strjoin(aux, command_arg);
+        free(aux);
+        if (access(exe, F_OK) == 0)
+            return (exe);
+        free(exe);
+        command_path++;
+    }
+    return (NULL);
+}
+
 char    *ft_findpath(char **envp)
 {
     while (ft_strncmp("PATH", *envp, 4))
@@ -8,11 +26,11 @@ char    *ft_findpath(char **envp)
     return (*envp + 5);
 }
 
-int detect_arch(const char *path)
+int detect_arch(char *binary)
 {
     Elf64_Ehdr  ehdr;
 
-    int fd = open(path, O_RDONLY);
+    int fd = open(binary, O_RDONLY);
     if (fd < 0)
         return (-1);
     read(fd, &ehdr, sizeof(ehdr));
@@ -25,7 +43,7 @@ int detect_arch(const char *path)
     return (-1);
 }
 
-void reading_regs(pid_t pid, t_syscall_info *syscall_info)
+void reading_entry_regs(pid_t pid, t_syscall_info *syscall_info)
 {
     struct iovec                iov;
     struct user_regs_struct     regs;
@@ -63,7 +81,6 @@ void reading_regs(pid_t pid, t_syscall_info *syscall_info)
                 return;
             }
         }
-
         syscall_info->syscall_numb = regist.orig_eax;
         syscall_info->arguments[0] = regist.ebx;
         syscall_info->arguments[1] = regist.ecx;
@@ -74,12 +91,44 @@ void reading_regs(pid_t pid, t_syscall_info *syscall_info)
     }
 }
 
+void    reading_exit_regs(pid_t pid, t_syscall_info *syscall_info)
+{
+    struct iovec                iov;
+    struct user_regs_struct     regs;
+    struct user_regs_struct_32  regist;
+    
+    if (syscall_info->arch == ARCH_64)
+    {
+        iov.iov_base = &regs;
+        iov.iov_len = sizeof(regs);
+
+        if (ptrace(PTRACE_GETREGSET, pid, (void *)NT_PRSTATUS, &iov) == -1)
+        {
+            ft_printf("Error: GETREGSET ( %s )\n", strerror(errno));
+            return;
+        }
+        syscall_info->return_value = regs.rax;
+    }
+    if (syscall_info->arch == ARCH_32)
+    {
+        iov.iov_base = &regist;
+        iov.iov_len = sizeof(regist);
+
+        if (ptrace(PTRACE_GETREGSET, pid, (void *)NT_PRSTATUS, &iov) == -1)
+        {
+            if (ptrace(PTRACE_GETREGSET, pid, NULL, &regist) == -1)
+            {
+                ft_printf("Error: GETREGS 32-bit ( %s )\n", strerror(errno));
+                return;
+            }
+        }
+        syscall_info->return_value = regist.eax;
+    }
+}
+
 /* void    reading_signals(siginfo_t *siginfo, t_signals *signals)
 {
 
 }
 
-void    reading_return_value(struct user_regs_struct *regs, t_syscall_info *syscall_info)
-{
-
-} */
+ */
