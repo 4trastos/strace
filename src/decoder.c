@@ -26,6 +26,7 @@ char    *get_binary(char **command_path, char *command_arg)
         free(exe);
         command_path++;
     }
+    ft_printf("./ft_strace: Cannot find executable 'no_exist_command'\n");
     return (NULL);
 }
 
@@ -39,7 +40,8 @@ char    *ft_findpath(char **envp)
 int detect_arch(char *binary)
 {
     Elf64_Ehdr  ehdr;
-
+    if (!binary)
+        return (-2);
     int fd = open(binary, O_RDONLY);
     if (fd < 0)
         return (-1);

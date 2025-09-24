@@ -13,7 +13,7 @@ int main(int argc, char **argv, char **envp)
 
     if (argc < 2)
     {
-        ft_printf("❌ Use: %s must have PROG [ARGS] or -c [ARGS] ❌\n", argv[0]);
+        ft_printf("❌ Use: %s must have PROG [ARGS] ❌\n", argv[0]);
         return (1);
     }
 
@@ -22,9 +22,10 @@ int main(int argc, char **argv, char **envp)
     syscall_info.binary = get_binary(syscall_info.command_path, argv[1]);
     syscall_info.arch = detect_arch(syscall_info.binary);
     
-    if (syscall_info.arch == -1)
+    if (syscall_info.arch == -1 || syscall_info.arch == -2)
     {
-        ft_printf("Error: Unrecognized architecture \n");
+        if (syscall_info.arch == -1)
+            ft_printf("Error: Unrecognized architecture \n");
         return (1);
     }
 
