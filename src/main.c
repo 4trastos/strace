@@ -7,7 +7,6 @@ int main(int argc, char **argv, char **envp)
 {
     t_syscall_info          syscall_info;
     siginfo_t               siginfo;
-    //t_signals               signals;
     pid_t                   pid;
     int                     status;
     int                     syscall_state = 0;
@@ -115,6 +114,7 @@ int main(int argc, char **argv, char **envp)
                     ft_printf("Error: GetSigInfo ( %s )\n", strerror(errno));
                     break;
                 }
+                ft_printf("--- %s (%s) ---\n", get_signal_name(siginfo.si_signo), "señal");
                 ptrace(PTRACE_SYSCALL, pid, NULL, WSTOPSIG(status));  // reinyecta señal
             }
         }

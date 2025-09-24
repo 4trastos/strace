@@ -109,6 +109,7 @@ void        reading_exit_regs(pid_t pid, t_syscall_info *syscall_info);
 void        print_syscall_args(pid_t pid, const t_syscall_info *info, const t_syscall_entry *entry);
 void        print_flags(long value, const t_flag_entry *flags);
 const char  *get_error_name(long errnum);
+const char  *get_signal_name(int signum);
 
 //*** auxiliary functions ***/
 
