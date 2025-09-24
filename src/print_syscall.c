@@ -63,7 +63,7 @@ void    print_syscall_args(pid_t pid, const t_syscall_info *info, const t_syscal
             print_flags(info->arguments[i], g_ioctl_cmds);
         else if (info->syscall_numb == 21 && i == 2)        // SYS_access, second argument
             print_flags(info->arguments[i], g_access_flags);
-        else if (info->syscall_numb == 257 && i == 1)       // SYS_openat, segundo argumento
+        else if (info->syscall_numb == 256 && i == 2)       // SYS_openat, tercer argumento son flags
             print_flags(info->arguments[i], g_openat_flags); 
         else 
         {

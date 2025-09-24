@@ -83,10 +83,11 @@ int main(int argc, char **argv, char **envp)
             {
                 if (WIFSIGNALED(status))
                 {
-                    ft_printf("+++ Killed by signal %d +++\n", WTERMSIG(status));
-                    break;
+                    const char *sig_name = get_signal_name(WTERMSIG(status));
+                    ft_printf("+++ Killed by signal %s +++\n", sig_name);
                 }
-                ft_printf("+++ Exited with status %d +++\n", WEXITSTATUS(status));
+                else
+                    ft_printf("+++ Exited with status %d +++\n", WEXITSTATUS(status));
                 break;
             }
 
@@ -115,9 +116,10 @@ int main(int argc, char **argv, char **envp)
                     break;
                 }
                 ft_printf("--- %s (%s) ---\n", get_signal_name(siginfo.si_signo), "señal");
-                ptrace(PTRACE_SYSCALL, pid, NULL, WSTOPSIG(status));  // reinyecta señal
+                ptrace(PTRACE_SYSCALL, pid, NULL, siginfo.si_signo);  // reinyecta señal
             }
         }
+        //free_syscall_info(&syscall_info);
     }
 
     return (0);
