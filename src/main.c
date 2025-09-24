@@ -102,7 +102,8 @@ int main(int argc, char **argv, char **envp)
                 else
                 {
                     reading_exit_regs(pid, &syscall_info);
-                    ft_printf("syscall %d(...) = %d\n", syscall_info.syscall_numb, syscall_info.return_value);
+                    const t_syscall_entry *entry = &g_syscall_table[syscall_info.syscall_numb];
+                    print_syscall_args(pid, &syscall_info, entry);
                     syscall_state = 0;
                 }
             }

@@ -4,7 +4,8 @@ CFLAGS = -Wall -Werror -Wextra -g
 RM = rm -f
 LIB = -lftprintf
 
-SRC = src/main.c src/decoder.c aux/auxiliars.c aux/ft_split.c
+SRC = src/main.c src/decoder.c aux/auxiliars.c aux/ft_split.c src/print_syscall.c src/syscall_table.c \
+		src/error_table.c src/flags_table.c src/signals_table.c
 OBJS = $(SRC:.c=.o)
 
 FT_PRINTF_DIR = lib/printf

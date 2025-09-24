@@ -65,8 +65,8 @@ void reading_entry_regs(pid_t pid, t_syscall_info *syscall_info)
         syscall_info->arguments[1] = regs.rsi;
         syscall_info->arguments[2] = regs.rdx;
         syscall_info->arguments[3] = regs.r10;
-        syscall_info->arguments[4] = regs.r9;
         syscall_info->arguments[5] = regs.r8;
+        syscall_info->arguments[4] = regs.r9;
     }
     if (syscall_info->arch == ARCH_32)
     {
