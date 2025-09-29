@@ -108,6 +108,7 @@ void        reading_entry_regs(pid_t pid, t_syscall_info *syscall_info);
 void        reading_exit_regs(pid_t pid, t_syscall_info *syscall_info);
 void        print_syscall_args(pid_t pid, const t_syscall_info *info, const t_syscall_entry *entry);
 void        print_flags(long value, const t_flag_entry *flags);
+void        ft_read_string_from_mem(pid_t pid, unsigned long addr, char *buffer, size_t max_len);
 const char  *get_error_name(long errnum);
 const char  *get_signal_name(int signum);
 
@@ -118,5 +119,7 @@ char        **ft_split(char *str, char c);
 size_t      ft_strlen(char *str);
 char        *ft_strdup(char *str, int len);
 char        *ft_strjoin(char *str1, char *str2);
+char        *ft_strcpy(char *dst, const char *src);
+char	    *ft_itoa(int number);
 
 #endif

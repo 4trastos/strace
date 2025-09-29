@@ -59,7 +59,7 @@ void    print_syscall_args(pid_t pid, const t_syscall_info *info, const t_syscal
             print_flags(info->arguments[i], g_prot_flags);
         else if (info->syscall_numb == 9 && i == 3)         // SYS_mmap, cuarto argumento (flags)
             print_flags(info->arguments[i], g_map_flags);
-        else if (info->syscall_numb == 16 && i == 1)     // 16 es SYS_ioctl
+        else if (info->syscall_numb == 16 && i == 1)        // 16 es SYS_ioctl
             print_flags(info->arguments[i], g_ioctl_cmds);
         else if (info->syscall_numb == 21 && i == 2)        // SYS_access, second argument
             print_flags(info->arguments[i], g_access_flags);

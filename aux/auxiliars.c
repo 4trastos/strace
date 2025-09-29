@@ -1,6 +1,18 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
+char *ft_strcpy(char *dst, const char *src)
+{
+    int i = 0;
+    while (src[i] != '\0')
+    {
+        dst[i] = src[i];
+        i++;
+    }
+    dst[i] = '\0';
+    return (dst);
+}
+
 char    *ft_strjoin(char *str1, char *str2)
 {
     char    *new;
