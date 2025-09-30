@@ -53,26 +53,26 @@ typedef enum
 
 typedef struct s_flag_entry
 {
-    long        value;
-    const char  *name;
+    long    value;
+    char    *name;
 }   t_flag_entry;
 
 typedef struct s_error_entry
 {
-    int         err_num;
-    const char  *err_name;
+    int     err_num;
+    char    *err_name;
 }   t_error_entry;
 
 typedef struct s_syscall_entry
 {
-    const char *name;
+    char        *name;
     e_arg_type  arg_types[6];
 }   t_syscall_entry;
 
 typedef struct s_signal_entry
 {
-    int         signum;
-    const char *name;
+    int     signum;
+    char    *name;
 }   t_signal_entry;
 
 typedef struct s_syscall_info
@@ -86,14 +86,14 @@ typedef struct s_syscall_info
     char        *binary;
 }   t_syscall_info;
 
-extern const t_syscall_entry g_syscall_table[];
-extern const t_error_entry g_error_table[];
-extern const t_flag_entry g_prot_flags[];
-extern const t_flag_entry g_map_flags[];
-extern const t_flag_entry g_openat_flags[];
-extern const t_flag_entry g_access_flags[];
-extern const t_flag_entry g_ioctl_cmds[];
-extern const t_signal_entry g_signals_table[];
+extern t_syscall_entry g_syscall_table[];
+extern t_error_entry g_error_table[];
+extern t_flag_entry g_prot_flags[];
+extern t_flag_entry g_map_flags[];
+extern t_flag_entry g_openat_flags[];
+extern t_flag_entry g_access_flags[];
+extern t_flag_entry g_ioctl_cmds[];
+extern t_signal_entry g_signals_table[];
 
 
 //*** CPU logic ***/
@@ -106,17 +106,19 @@ char        *get_binary(char **command_path, char *command_arg);
 
 void        reading_entry_regs(pid_t pid, t_syscall_info *syscall_info);
 void        reading_exit_regs(pid_t pid, t_syscall_info *syscall_info);
-void        print_syscall_entry(pid_t pid, const t_syscall_info *info, const t_syscall_entry *entry);
-void        print_syscall_exit(const t_syscall_info *info);
-void        print_flags(long value, const t_flag_entry *flags);
+void        print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *entry);
+void        print_syscall_exit(t_syscall_info *info);
+void        print_flags(long value, t_flag_entry *flags);
 void        ft_read_string_from_mem(pid_t pid, unsigned long addr, char *buffer, size_t max_len);
 void        ft_read_buffer_from_mem(pid_t pid, unsigned long addr, size_t len, char *buffer, size_t max_len);
 void        ft_read_argv(pid_t pid, unsigned long addr);
 int         ft_read_word(pid_t pid, unsigned long addr, unsigned long *val);
-const char  *get_error_name(long errnum);
-const char  *get_signal_name(int signum);
+char        *get_error_name(long errnum);
+char        *get_signal_name(int signum);
 void        free_syscall_info(t_syscall_info *info);
 void        ft_free_split(char **str);
+int         ft_strace(t_syscall_info *syscall_info, char **argv, char **envp);
+int         init_syscall_info(t_syscall_info *syscall_info, char **argv, char **envp);
 
 //*** auxiliary functions ***/
 

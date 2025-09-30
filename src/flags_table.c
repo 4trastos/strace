@@ -3,7 +3,7 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
-const t_flag_entry g_prot_flags[] =
+t_flag_entry g_prot_flags[] =
 {
     {0x1, "PROT_READ"},
     {0x2, "PROT_WRITE"},
@@ -12,7 +12,7 @@ const t_flag_entry g_prot_flags[] =
     {0, NULL}
 };
 
-const t_flag_entry g_map_flags[] =
+t_flag_entry g_map_flags[] =
 {
     {0x1, "MAP_SHARED"},
     {0x2, "MAP_PRIVATE"},
@@ -23,7 +23,7 @@ const t_flag_entry g_map_flags[] =
     {0, NULL}
 };
 
-const t_flag_entry g_openat_flags[] =
+t_flag_entry g_openat_flags[] =
 {
     {O_RDONLY, "O_RDONLY"},
     {O_WRONLY, "O_WRONLY"},
@@ -43,7 +43,7 @@ const t_flag_entry g_openat_flags[] =
     {0, NULL}
 };
 
-const t_flag_entry g_access_flags[] = 
+t_flag_entry g_access_flags[] = 
 {
     {R_OK, "R_OK"},
     {W_OK, "W_OK"},
@@ -52,7 +52,7 @@ const t_flag_entry g_access_flags[] =
     {0, NULL}
 };
 
-const t_flag_entry g_ioctl_cmds[] =
+t_flag_entry g_ioctl_cmds[] =
 {
     {0x5401, "TIOCGWINSZ"},
     {0x5402, "TIOCSWINSZ"},

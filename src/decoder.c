@@ -1,7 +1,7 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
-const char  *get_signal_name(int signum)
+char  *get_signal_name(int signum)
 {
     for (int i = 0; g_signals_table[i].name != NULL; i++)
     {

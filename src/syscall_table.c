@@ -1,7 +1,7 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
-const t_syscall_entry g_syscall_table[] =
+t_syscall_entry g_syscall_table[] =
 {
     [0] = {"read", {INT, STRING, INT}},
     [1] = {"write", {INT, STRING, INT}},

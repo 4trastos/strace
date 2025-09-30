@@ -1,7 +1,7 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
-const t_error_entry g_error_table[] =
+t_error_entry g_error_table[] =
 {
     {0, "Success"},
     {EPERM, "EPERM"},

@@ -1,7 +1,7 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
-void    print_flags(long value, const t_flag_entry *flags)
+void    print_flags(long value, t_flag_entry *flags)
 {
     bool    first_flag = true;
     long    remaining_value = value;
@@ -30,7 +30,7 @@ void    print_flags(long value, const t_flag_entry *flags)
     }
 }
 
-const char *get_error_name(long errnum)
+char *get_error_name(long errnum)
 {
     int i = 0;
 
@@ -45,7 +45,7 @@ const char *get_error_name(long errnum)
 
 }
 
-void    print_syscall_entry(pid_t pid, const t_syscall_info *info, const t_syscall_entry *entry)
+void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *entry)
 {
     if (info->syscall_numb < 0)
         return;
@@ -106,7 +106,7 @@ void    print_syscall_entry(pid_t pid, const t_syscall_info *info, const t_sysca
     }
 }
 
-void    print_syscall_exit(const t_syscall_info *info)
+void    print_syscall_exit(t_syscall_info *info)
 {
     if (info->return_value < 0)
         ft_printf(") = -1 %s\n", get_error_name(info->return_value));
