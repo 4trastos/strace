@@ -1,6 +1,26 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
+size_t      ft_strlcat (char *dst, char *src, size_t len)
+{
+    size_t  dst_len;
+    size_t  src_len;
+    size_t  i;
+
+    dst_len = ft_strlen(dst);
+    src_len = ft_strlen(src);
+    if (len <= dst_len)
+        return(src_len + len);
+    i = 0;
+    while (src[i] != '\0' && (dst_len + i) < (len - 1))
+    {
+        dst[dst_len + i] = src[i];
+        i++;
+    }
+    dst[dst_len + i] = '\0';
+    return (dst_len + src_len);
+}
+
 char *ft_strcpy(char *dst, const char *src)
 {
     int i = 0;

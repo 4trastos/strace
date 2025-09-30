@@ -5,7 +5,8 @@ RM = rm -f
 LIB = -lftprintf
 
 SRC = src/main.c src/decoder.c aux/auxiliars.c aux/ft_split.c src/print_syscall.c src/syscall_table.c \
-		src/error_table.c src/flags_table.c src/signals_table.c src/read_string.c
+		src/error_table.c src/flags_table.c src/signals_table.c src/read_string.c aux/ft_itoa.c src/peekdata.c \
+		src/free_syscall.c
 OBJS = $(SRC:.c=.o)
 
 FT_PRINTF_DIR = lib/printf

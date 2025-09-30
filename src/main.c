@@ -95,16 +95,27 @@ int main(int argc, char **argv, char **envp)
             // Si se detiene por un syscall
             if (WSTOPSIG(status) == (SIGTRAP | 0x80))
             {
-                if (syscall_state == 0)
+                if (syscall_state == 0) // ENTRY
                 {
                     reading_entry_regs(pid, &syscall_info);
+                    if (syscall_info.syscall_numb == 59)
+                    {
+                        const t_syscall_entry   *entry = &g_syscall_table[syscall_info.syscall_numb];
+                        print_syscall_entry(pid, &syscall_info, entry);
+                    }
                     syscall_state = 1;
                 }
-                else
+                else // EXIT
                 {
                     reading_exit_regs(pid, &syscall_info);
-                    const t_syscall_entry *entry = &g_syscall_table[syscall_info.syscall_numb];
-                    print_syscall_args(pid, &syscall_info, entry);
+                    if (syscall_info.syscall_numb == 59)    // execve: Ya se imprimieron los args, solo se imprime el retorno
+                        print_syscall_exit(&syscall_info);
+                    else
+                    {
+                        const t_syscall_entry *entry = &g_syscall_table[syscall_info.syscall_numb];
+                        print_syscall_entry(pid, &syscall_info, entry);
+                        print_syscall_exit(&syscall_info);
+                    }
                     syscall_state = 0;
                 }
             }
@@ -120,7 +131,7 @@ int main(int argc, char **argv, char **envp)
                 ptrace(PTRACE_SYSCALL, pid, NULL, siginfo.si_signo);  // reinyecta señal
             }
         }
-        //free_syscall_info(&syscall_info);
+        free_syscall_info(&syscall_info);
     }
 
     return (0);

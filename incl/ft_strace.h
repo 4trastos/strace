@@ -106,11 +106,17 @@ char        *get_binary(char **command_path, char *command_arg);
 
 void        reading_entry_regs(pid_t pid, t_syscall_info *syscall_info);
 void        reading_exit_regs(pid_t pid, t_syscall_info *syscall_info);
-void        print_syscall_args(pid_t pid, const t_syscall_info *info, const t_syscall_entry *entry);
+void        print_syscall_entry(pid_t pid, const t_syscall_info *info, const t_syscall_entry *entry);
+void        print_syscall_exit(const t_syscall_info *info);
 void        print_flags(long value, const t_flag_entry *flags);
 void        ft_read_string_from_mem(pid_t pid, unsigned long addr, char *buffer, size_t max_len);
+void        ft_read_buffer_from_mem(pid_t pid, unsigned long addr, size_t len, char *buffer, size_t max_len);
+void        ft_read_argv(pid_t pid, unsigned long addr);
+int         ft_read_word(pid_t pid, unsigned long addr, unsigned long *val);
 const char  *get_error_name(long errnum);
 const char  *get_signal_name(int signum);
+void        free_syscall_info(t_syscall_info *info);
+void        ft_free_split(char **str);
 
 //*** auxiliary functions ***/
 
@@ -121,5 +127,6 @@ char        *ft_strdup(char *str, int len);
 char        *ft_strjoin(char *str1, char *str2);
 char        *ft_strcpy(char *dst, const char *src);
 char	    *ft_itoa(int number);
+size_t      ft_strlcat (char *dst, char *src, size_t len);
 
 #endif
