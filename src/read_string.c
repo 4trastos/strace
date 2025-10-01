@@ -5,13 +5,22 @@ void    ft_read_string_from_mem(pid_t pid, unsigned long addr, char *buffer, siz
 {
     char    path[256];
     char    *pid_str;
-    char    *addr_str;
+    //char    *addr_str;
     int     fd;
     size_t  i;
     ssize_t bytes_read;
 
-    if (max_len == 0)
+    if (max_len == 0 || addr == 0)
+    {
+        buffer[0] = '\0';
         return;
+    }
+
+    if (addr > 0x7fffffffffffUL)  // Direcciones muy altas probablemente inválidas en userspace
+    {
+        ft_strlcpy(buffer, "[invalid address]", max_len);
+        return;
+    }
     
     // 1. Abrir /proc/<pid>/mem
     ft_strcpy(path, "/proc/");
@@ -39,25 +48,50 @@ void    ft_read_string_from_mem(pid_t pid, unsigned long addr, char *buffer, siz
 
     if (bytes_read <= 0)
     {
-        addr_str = ft_itoa((int)addr);
-        if (!addr_str)
-            return;
-        ft_strcpy(buffer, "<");
-        ft_strlcat(buffer, addr_str, max_len);
-        ft_strlcat(buffer, ">", max_len);
-        free(addr_str);
+        // addr_str = ft_itoa((int)addr);
+        // if (!addr_str)
+        //     return;
+        // ft_strcpy(buffer, "<");
+        // ft_strlcat(buffer, addr_str, max_len);
+        // ft_strlcat(buffer, ">", max_len);
+        // free(addr_str);
+        // return;
+        
+        // Si falla la lectura, mostrar la dirección en formato hexadecimal
+        ft_strcpy(buffer, "0x");
+        unsigned long temp_addr = addr;
+        char hex_chars[] = "0123456789abcdef";
+        char hex_buffer[17]; // Para 64-bit: 16 chars + null
+        int pos = 16;
+        
+        hex_buffer[pos] = '\0';
+        while (pos > 0)
+        {
+            hex_buffer[--pos] = hex_chars[temp_addr & 0xf];
+            temp_addr >>= 4;
+            if (temp_addr == 0)
+                break;
+        }
+        
+        ft_strlcat(buffer, &hex_buffer[pos], max_len);
         return;
     }
 
-    // 3. Buscar el primer nulo y truncar si es necesario
+    // 3. Asegurar terminación nula
+    buffer[bytes_read] = '\0';
+
+    // 4. Buscar el primer nulo y truncar si es necesario
     i = 0;
     while (i < (size_t)bytes_read)
     {
         if (buffer[i] == '\0')
-            return;
+            return; // String válido terminado con null
         i++;
     }
-    buffer[max_len - 1] = '\0';
+    
+    // Si no encontramos nulo en los bytes leídos, truncar
+    if (max_len > 0)
+        buffer[max_len - 1] = '\0';
 }
 
 void    ft_read_buffer_from_mem(pid_t pid, unsigned long addr, size_t len, char *buffer, size_t max_len)

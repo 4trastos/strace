@@ -71,7 +71,7 @@ void    ft_read_argv(pid_t pid, unsigned long addr)
             else if (i > 20)
                 ft_printf("/* %d vars */", i);
             else
-                ft_printf("NULL");
+                ft_printf(", NULL");
             break;
         }
 

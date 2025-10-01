@@ -1,6 +1,8 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
+//find /usr/include -name "unistd_32.h"
+
 t_syscall_entry g_syscall_table_32[] = {
     [0] = {"restart_syscall", {VOID}},
     [1] = {"exit", {INT}},

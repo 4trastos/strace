@@ -26,7 +26,7 @@ char    *get_binary(char **command_path, char *command_arg)
         free(exe);
         command_path++;
     }
-    ft_printf("./ft_strace: Cannot find executable 'command_arg'\n");
+    ft_printf("./ft_strace: Cannot find executable '%s'\n", command_arg);
     return (NULL);
 }
 
@@ -129,7 +129,8 @@ void    reading_exit_regs(pid_t pid, t_syscall_info *syscall_info)
 
         if (ptrace(PTRACE_GETREGSET, pid, (void *)NT_PRSTATUS, &iov) == -1)
         {
-            if (ptrace(PTRACE_GETREGSET, pid, NULL, &regist) == -1)
+            //if (ptrace(PTRACE_GETREGSET, pid, NULL, &regist) == -1)
+            if (ptrace(PTRACE_GETREGS, pid, NULL, &regist) == -1)
             {
                 ft_printf("Error: GETREGS 32-bit ( %s )\n", strerror(errno));
                 return;

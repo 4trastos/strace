@@ -17,6 +17,7 @@ int         ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
     t_syscall_entry     *entry;
     pid_t               pid;
     int                 status;
+    int                 sig;
     int                 syscall_state = 0;              // 0 = ENTRY, 1 = EXIT
 
     pid = fork();
@@ -82,36 +83,41 @@ int         ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
             }
 
             // Si se detiene por un syscall (ENTRY o EXIT)
-            if (WSTOPSIG(status) == (SIGTRAP | 0x80))
+            if (WIFSTOPPED(status))
             {
-                if (syscall_state == 0) // ENTRY
+                sig = WSTOPSIG(status);
+                if (sig == (SIGTRAP | 0x80))
                 {
-                    // Leer número de syscall y argumentos de los registros
-                    reading_entry_regs(pid, syscall_info);
-                    // Obtener la entrada de la tabla global (siempre debe existir)
-                    //entry = &g_syscall_table_64[syscall_info->syscall_numb];
-                    entry = &(get_syscall_table(syscall_info->arch))[syscall_info->syscall_numb];
-                    print_syscall_entry(pid, syscall_info, entry);
-                    syscall_state = 1;   // La siguiente parada es la SALIDA
+                    if (syscall_state == 0) // ENTRY
+                    {
+                        // Leer número de syscall y argumentos de los registros
+                        reading_entry_regs(pid, syscall_info);
+                        // Obtener la entrada de la tabla global (siempre debe existir)
+                        entry = &(get_syscall_table(syscall_info->arch))[syscall_info->syscall_numb];
+                        print_syscall_entry(pid, syscall_info, entry);
+                        syscall_state = 1;   // La siguiente parada es la SALIDA
+                    }
+                    else // EXIT
+                    {
+                        // Leer el valor de retorno del syscall
+                        reading_exit_regs(pid, syscall_info);
+                        print_syscall_exit(syscall_info);
+                        syscall_state = 0;
+                    }
                 }
-                else // EXIT
+                // Si se detiene por una señal (no por un syscall)
+                else
                 {
-                    // Leer el valor de retorno del syscall
-                    reading_exit_regs(pid, syscall_info);
-                    print_syscall_exit(syscall_info);
-                    syscall_state = 0;
+                    if (ptrace(PTRACE_GETSIGINFO, pid, NULL, &siginfo) == 0)
+                    {
+                        //ft_printf("--- %s (%s) ---\n", get_signal_name(siginfo.si_signo), "señal");
+                        ft_printf("--- %s {si_signo=%d, si_code=%d, si_pid=%d} ---\n", get_signal_name(siginfo.si_signo), siginfo.si_signo, siginfo.si_code, siginfo.si_pid);
+                    }
+                    else
+                        ft_printf("--- %s ---\n", get_signal_name(sig));
+                    //ptrace(PTRACE_SYSCALL, pid, NULL, siginfo.si_signo);
+                    ptrace(PTRACE_SYSCALL, pid, NULL, sig);
                 }
-            }
-            // Si se detiene por una señal (no por un syscall)
-            else
-            {
-                if (ptrace(PTRACE_GETSIGINFO, pid, NULL, &siginfo) == -1)
-                {
-                    ft_printf("Error: GetSigInfo ( %s )\n", strerror(errno));
-                    break;
-                }
-                ft_printf("--- %s (%s) ---\n", get_signal_name(siginfo.si_signo), "señal");
-                ptrace(PTRACE_SYSCALL, pid, NULL, siginfo.si_signo);  // reinyecta señal
             }
         }
     }

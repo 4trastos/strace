@@ -1,6 +1,13 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
+char    *get_at_fdcwd_name(long value)
+{
+    if (value == -100)
+        return "AT_FDCWD";
+    return NULL;
+}
+
 void    print_flags(long value, t_flag_entry *flags)
 {
     bool    first_flag = true;
@@ -49,6 +56,7 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
 {
     if (info->syscall_numb < 0)
         return;
+    
     ft_printf("%s(", entry->name);
 
     for (int i = 0; i < 6; i++)
@@ -77,7 +85,32 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
             print_flags(info->arguments[i], g_ioctl_cmds);
         else if (info->syscall_numb == 21 && i == 2)                // SYS_access, second argument
             print_flags(info->arguments[i], g_access_flags);
-        else if (info->syscall_numb == 256 && i == 2)               // SYS_openat, tercer argumento son flags
+        else if (info->syscall_numb == 257 && i == 0)                // SYS_openat, primer argumento
+        {
+            char    *name = get_at_fdcwd_name(info->arguments[i]);
+            if (name)
+                ft_printf("%s", name);
+            else
+                ft_printf("%d", info->arguments[i]);
+        }
+        else if (info->syscall_numb == 257 && i == 1)              // SYS_openat, segundo argumento
+        {
+            char temp_str[128];
+            if (info->arguments[i] == 0)
+                ft_printf("NULL");
+            else
+            {
+                ft_read_string_from_mem(pid, info->arguments[i], temp_str, sizeof(temp_str));
+                
+                if (temp_str[0] == '0' && temp_str[1] == 'x') // Si devolvió una dirección hex
+                    ft_printf("%p", (void *)info->arguments[i]); // Mostrar la dirección original
+                else if (temp_str[0] == '[') // Si devolvió un mensaje de error
+                    ft_printf("%p", (void *)info->arguments[i]); // Mostrar la dirección original  
+                else
+                    ft_printf("\"%s\"", temp_str); // String válido
+            }
+        }
+        else if (info->syscall_numb == 257 && i == 2)               // SYS_openat, tercer argumento son flags
             print_flags(info->arguments[i], g_openat_flags); 
         else 
         {
@@ -112,9 +145,16 @@ void    print_syscall_exit(t_syscall_info *info)
         ft_printf(") = -1 %s\n", get_error_name(info->return_value));
     else
     {
-        // 9 es mmap, 12 es brk, 59:execve (valores que se imprimen en hexadecimal)
-        if (info->syscall_numb == 9 || info->syscall_numb == 12 || info->syscall_numb == 59)
-            ft_printf(") = %p\n", info->return_value);
+        if (info->syscall_numb == 9 ||                  // mmap
+            info->syscall_numb == 12 ||                 // brk
+            info->syscall_numb == 59 ||                 // execve
+            info->syscall_numb == 11 ||                 // munmap (a veces)
+            info->syscall_numb == 25 ||                 // mremap
+            info->syscall_numb == 192 ||                // mmap2 (32-bit)
+            (info->return_value > 0xffffffff))          // Valores muy grandes
+        {
+            ft_printf(") = %p\n", (void *)info->return_value);
+        }
         else
             ft_printf(") = %d\n", info->return_value);
     }
