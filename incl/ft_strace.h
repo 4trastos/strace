@@ -86,7 +86,8 @@ typedef struct s_syscall_info
     char        *binary;
 }   t_syscall_info;
 
-extern t_syscall_entry g_syscall_table[];
+extern t_syscall_entry g_syscall_table_64[];
+extern t_syscall_entry g_syscall_table_32[];
 extern t_error_entry g_error_table[];
 extern t_flag_entry g_prot_flags[];
 extern t_flag_entry g_map_flags[];

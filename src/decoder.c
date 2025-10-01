@@ -26,7 +26,7 @@ char    *get_binary(char **command_path, char *command_arg)
         free(exe);
         command_path++;
     }
-    ft_printf("./ft_strace: Cannot find executable 'no_exist_command'\n");
+    ft_printf("./ft_strace: Cannot find executable 'command_arg'\n");
     return (NULL);
 }
 
@@ -59,7 +59,7 @@ void reading_entry_regs(pid_t pid, t_syscall_info *syscall_info)
 {
     struct iovec                iov;
     struct user_regs_struct     regs;
-    struct user_regs_struct_32  regist;
+    struct user_regs_struct_32  regs32;
 
     
     if (syscall_info->arch == ARCH_64)
@@ -69,7 +69,7 @@ void reading_entry_regs(pid_t pid, t_syscall_info *syscall_info)
     
         if (ptrace(PTRACE_GETREGSET, pid, (void *)NT_PRSTATUS, &iov) == -1)
         {
-            ft_printf("Error: GETREGSET ( %s )\n", strerror(errno));
+            ft_printf("Error: GETREGSET 64-bit ( %s )\n", strerror(errno));
             return;
         }
         syscall_info->syscall_numb = regs.orig_rax;
@@ -82,24 +82,25 @@ void reading_entry_regs(pid_t pid, t_syscall_info *syscall_info)
     }
     if (syscall_info->arch == ARCH_32)
     {
-        iov.iov_base = &regist;
-        iov.iov_len = sizeof(regist);
+        iov.iov_base = &regs32;
+        iov.iov_len = sizeof(regs32);
 
         if (ptrace(PTRACE_GETREGSET, pid, (void *)NT_PRSTATUS, &iov) == -1)
         {
-            if (ptrace(PTRACE_GETREGSET, pid, NULL, &regist) == -1)
+            if (ptrace(PTRACE_GETREGS, pid, NULL, &regs32) == -1)
+            //if (ptrace(PTRACE_GETREGSET, pid, NULL, &regs32) == -1)
             {
                 ft_printf("Error: GETREGS 32-bit ( %s )\n", strerror(errno));
                 return;
             }
         }
-        syscall_info->syscall_numb = regist.orig_eax;
-        syscall_info->arguments[0] = regist.ebx;
-        syscall_info->arguments[1] = regist.ecx;
-        syscall_info->arguments[2] = regist.edx;
-        syscall_info->arguments[3] = regist.esi;
-        syscall_info->arguments[4] = regist.edi;
-        syscall_info->arguments[5] = regist.ebp;
+        syscall_info->syscall_numb = regs32.orig_eax;
+        syscall_info->arguments[0] = regs32.ebx;
+        syscall_info->arguments[1] = regs32.ecx;
+        syscall_info->arguments[2] = regs32.edx;
+        syscall_info->arguments[3] = regs32.esi;
+        syscall_info->arguments[4] = regs32.edi;
+        syscall_info->arguments[5] = regs32.ebp;
     }
 }
 

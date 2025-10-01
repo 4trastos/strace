@@ -3,12 +3,21 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
+t_syscall_entry *get_syscall_table(int arch)
+{
+    if (arch == ARCH_64)
+        return g_syscall_table_64;
+    else
+        return g_syscall_table_32;
+}
+
 int         ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
 {
-    siginfo_t               siginfo;
-    pid_t                   pid;
-    int                     status;
-    int                     syscall_state = 0;
+    siginfo_t           siginfo;
+    t_syscall_entry     *entry;
+    pid_t               pid;
+    int                 status;
+    int                 syscall_state = 0;              // 0 = ENTRY, 1 = EXIT
 
     pid = fork();
     if (pid == -1)
@@ -65,37 +74,31 @@ int         ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                 if (WIFSIGNALED(status))
                 {
                     char *sig_name = get_signal_name(WTERMSIG(status));
-                    ft_printf("+++ Killed by signal %s +++\n", sig_name);
+                    ft_printf("\n+++ Killed by signal %s +++\n", sig_name);
                 }
                 else
-                    ft_printf("+++ Exited with status %d +++\n", WEXITSTATUS(status));
+                    ft_printf("\n+++ Exited with status %d +++\n", WEXITSTATUS(status));
                 break;
             }
 
-            // Si se detiene por un syscall
+            // Si se detiene por un syscall (ENTRY o EXIT)
             if (WSTOPSIG(status) == (SIGTRAP | 0x80))
             {
                 if (syscall_state == 0) // ENTRY
                 {
+                    // Leer número de syscall y argumentos de los registros
                     reading_entry_regs(pid, syscall_info);
-                    if (syscall_info->syscall_numb == 59)
-                    {
-                        t_syscall_entry   *entry = &g_syscall_table[syscall_info->syscall_numb];
-                        print_syscall_entry(pid, syscall_info, entry);
-                    }
-                    syscall_state = 1;
+                    // Obtener la entrada de la tabla global (siempre debe existir)
+                    //entry = &g_syscall_table_64[syscall_info->syscall_numb];
+                    entry = &(get_syscall_table(syscall_info->arch))[syscall_info->syscall_numb];
+                    print_syscall_entry(pid, syscall_info, entry);
+                    syscall_state = 1;   // La siguiente parada es la SALIDA
                 }
                 else // EXIT
                 {
+                    // Leer el valor de retorno del syscall
                     reading_exit_regs(pid, syscall_info);
-                    if (syscall_info->syscall_numb == 59)    // execve: Ya se imprimieron los args, solo se imprime el retorno
-                        print_syscall_exit(syscall_info);
-                    else
-                    {
-                        t_syscall_entry *entry = &g_syscall_table[syscall_info->syscall_numb];
-                        print_syscall_entry(pid, syscall_info, entry);
-                        print_syscall_exit(syscall_info);
-                    }
+                    print_syscall_exit(syscall_info);
                     syscall_state = 0;
                 }
             }
