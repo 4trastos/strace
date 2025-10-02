@@ -130,7 +130,7 @@ void    ft_read_buffer_from_mem(pid_t pid, unsigned long addr, size_t len, char 
     //bytes_read = pread(fd, buffer, bytes_to_read, (off_t)addr);
     bytes_read = -1;
     if (lseek(fd, (off_t)addr, SEEK_SET) != (off_t)-1)
-         bytes_read = read(fd, buffer, max_len - 1);
+        bytes_read = read(fd, buffer, bytes_to_read);
     close(fd);
     
     if (bytes_read <= 0)
