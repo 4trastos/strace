@@ -3,7 +3,7 @@
 
 //find /usr/include -name "unistd_32.h"
 
-t_syscall_entry g_syscall_table_32[] = {
+t_syscall_entry g_syscall_table_32[MAX_SYSCALLS_32] = {
     [0] = {"restart_syscall", {VOID}},
     [1] = {"exit", {INT}},
     [2] = {"fork", {VOID}},
@@ -378,5 +378,11 @@ t_syscall_entry g_syscall_table_32[] = {
     [371] = {"mlock2", {POINTER, INT, INT}},
     [372] = {"copy_file_range", {INT, POINTER, INT, POINTER, INT, INT}},
     [373] = {"preadv2", {INT, POINTER, INT, INT, INT, INT}},
-    [374] = {"pwritev2", {INT, POINTER, INT, INT, INT, INT}}
+    [374] = {"pwritev2", {INT, POINTER, INT, INT, INT, INT}},
+    [375] = {"statx", {INT, STRING, INT, INT, POINTER}},
+    [376] = {"arch_prctl", {INT, POINTER}},  
+    [377] = {"set_thread_area", {POINTER}},
+    [378] = {"rseq", {POINTER, INT, INT, INT}},
+    [383] = {"statx", {INT, STRING, INT, INT, POINTER}},
+    [386] = {"rseq", {POINTER, INT, INT, INT}}
 };

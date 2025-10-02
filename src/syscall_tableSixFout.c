@@ -3,7 +3,7 @@
 
 //find /usr/include -name "unistd_64.h"
 
-t_syscall_entry g_syscall_table_64[] = {
+t_syscall_entry g_syscall_table_64[MAX_SYSCALLS_64] = {
     [0] = {"read", {INT, POINTER, INT}},
     [1] = {"write", {INT, POINTER, INT}},
     [2] = {"open", {STRING, INT, INT}},

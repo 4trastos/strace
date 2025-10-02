@@ -5,7 +5,7 @@ int  init_syscall_info(t_syscall_info *syscall_info, char **argv, char **envp)
 {
     if (access(argv[1], F_OK) == 0)
     {
-        syscall_info->binary = ft_strdup(argv[1], sizeof(argv[1]));
+        syscall_info->binary = ft_strdup(argv[1], ft_strlen(argv[1]));
         syscall_info->command_path = NULL;
     }
     else

@@ -6,13 +6,16 @@
 t_syscall_entry *get_syscall_table(int arch)
 {
     if (arch == ARCH_64)
-        return g_syscall_table_64;
+        return (g_syscall_table_64);
+    else if (arch == ARCH_32)
+        return (g_syscall_table_32);
     else
-        return g_syscall_table_32;
+        return (NULL);
 }
 
 int         ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
 {
+    t_syscall_entry     *table;
     t_syscall_entry     *entry;
     siginfo_t           siginfo;
     pid_t               pid;
@@ -92,8 +95,31 @@ int         ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                     {
                         // Leer número de syscall y argumentos de los registros
                         reading_entry_regs(pid, syscall_info);
-                        // Obtener la entrada de la tabla global (siempre debe existir)
-                        entry = &(get_syscall_table(syscall_info->arch))[syscall_info->syscall_numb];
+
+                        table = get_syscall_table(syscall_info->arch);
+                        if (!table)
+                        {
+                            ft_printf("unknown_syscall_%d(", syscall_info->syscall_numb);
+                            syscall_state = 1;
+                            continue;
+                        }
+
+                        // ✅ VERIFICACIÓN CRÍTICA: Asegurar que el número esté en rango
+                        if (syscall_info->syscall_numb < 0 || syscall_info->syscall_numb >= MAX_SYSCALLS_32)
+                        {
+                            ft_printf("unknown_syscall_%d(", syscall_info->syscall_numb);
+                            syscall_state = 1;
+                            continue;
+                        }
+
+                        entry = &table[syscall_info->syscall_numb];
+
+                        if (!entry || !entry->name) {
+                            ft_printf("syscall_%d(", syscall_info->syscall_numb);
+                            syscall_state = 1;
+                            continue;
+                        }
+
                         print_syscall_entry(pid, syscall_info, entry);
                         syscall_state = 1;   // La siguiente parada es la SALIDA
                     }

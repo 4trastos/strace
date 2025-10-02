@@ -17,8 +17,14 @@
 # include <fcntl.h>
 # include <elf.h>
 
-# define    ARCH_64 64
-# define    ARCH_32 32
+# define    EI_CLASS    4
+# define    ELFCLASS32  1
+# define    ELFCLASS64  2
+# define    ARCH_32     1
+# define    ARCH_64     2
+
+# define    MAX_SYSCALLS_32 387
+# define    MAX_SYSCALLS_64 462
 
 # ifdef __x86_64__
 struct user_regs_struct_32
