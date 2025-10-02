@@ -233,3 +233,159 @@ errno 12    # ENOMEM
 # O ver todos los códigos
 errno -l
 ```
+
+**lista completa de pruebas** para verificar que tu `ft_strace` está listo para la corrección:
+
+## 🧪 LISTA DE PRUEBAS - FT_STRACE
+
+### ✅ **Pruebas Básicas de Funcionamiento**
+
+```bash
+# 1. Comando simple
+./ft_strace ls
+# Esperado: Muestra syscalls de ls, termina con exit_group(0)
+
+# 2. Comando con argumentos  
+./ft_strace ls -la
+# Esperado: Syscalls similares pero con argumentos diferentes
+
+# 3. Comando que falla
+./ft_strace comando_inexistente
+# Esperado: Error claro "Cannot find executable"
+
+# 4. Ruta absoluta
+./ft_strace /bin/ls
+# Esperado: Mismo que prueba 1 pero con ruta completa en execve
+```
+
+### ✅ **Pruebas de Rutas y PATH**
+
+```bash
+# 5. Sin PATH
+env -i ./ft_strace /bin/ls
+# Esperado: Funciona correctamente con ruta absoluta
+
+# 6. Comando en PATH normal
+./ft_strace ls
+# Esperado: Encuentra ls a través del PATH
+
+# 7. Directorio actual
+./ft_strace ./mixed_32bit
+# Esperado: Ejecuta binario en directorio actual
+```
+
+### ✅ **Pruebas de Arquitectura**
+
+```bash
+# 8. Binario 32-bit
+./ft_strace ./mixed_32bit
+# Esperado: Detecta arquitectura 32-bit, muestra syscalls correctos
+
+# 9. Binario 64-bit  
+./ft_strace /bin/ls
+# Esperado: Detecta arquitectura 64-bit correctamente
+```
+
+### ✅ **Pruebas de Parsing y Output**
+
+```bash
+# 10. Syscalls con strings
+./ft_strace echo "hola mundo"
+# Esperado: Muestra el string "hola mundo" en write()
+
+# 11. Syscalls con flags
+./ft_strace ls -l
+# Esperado: Muestra flags como O_RDONLY, PROT_READ, etc.
+
+# 12. Valores de retorno
+./ft_strace ls /directorio_inexistente
+# Esperado: Muestra errores ENOENT, return values negativos
+```
+
+### ✅ **Pruebas de Manejo de Errores**
+
+```bash
+# 13. Comando no existente
+./ft_strace comando_fantasma
+# Esperado: Error claro, no segmentation fault
+
+# 14. Sin permisos de ejecución
+chmod -x mixed_32bit
+./ft_strace ./mixed_32bit
+chmod +x mixed_32bit
+# Esperado: Error de permisos, no crash
+
+# 15. Proceso que recibe señal
+./ft_strace sleep 10
+# Luego Ctrl+C en otra terminal: kill -SIGTERM <pid>
+# Esperado: Muestra la señal recibida
+```
+
+### ✅ **Pruebas de Memoria y Robustez**
+
+```bash
+# 16. Valgrind - sin memory leaks
+valgrind --leak-check=full ./ft_strace ls
+# Esperado: No memory leaks, no errors
+
+# 17. Proceso largo
+./ft_strace find /usr/include -name "*.h" | head -20
+# Esperado: Funciona correctamente, maneja muchos syscalls
+
+# 18. Multiple procesos
+./ft_strace bash -c "ls; pwd; whoami"
+# Esperado: Maneja correctamente múltiples comandos
+```
+
+### ✅ **Comparación con Strace Real**
+
+```bash
+# 19. Comparación lado a lado
+./ft_strace ls > output_ft.txt
+strace ls > output_real.txt 2>&1
+
+# Comparar formatos básicos
+diff -u output_ft.txt output_real.txt | head -20
+# Esperado: Formato similar, mismos syscalls principales
+```
+
+## 🔍 **Checklist de Corrección**
+
+### **REQUISITOS OBLIGATORIOS:**
+- [ ] **Ejecutable llamado `ft_strace`**
+- [ ] **Compila con Makefile** (`make`, `make clean`, `make fclean`, `make re`)
+- [ ] **Código en C** sin crashes (segfaults, bus errors)
+- [ ] **Manejo de errores** elegante (no crashes inesperados)
+- [ ] **Funciona en Ubuntu 14.10** con kernel > 3.4
+
+### **FUNCIONALIDAD:**
+- [ ] **Tracea syscalls** básicos (open, read, write, close)
+- [ ] **Muestra argumentos** de forma legible
+- [ ] **Muestra valores de retorno** y errores
+- [ ] **Soporta 32-bit y 64-bit**
+- [ ] **Maneja rutas** (absolutas, relativas, PATH)
+- [ ] **Parsing de strings** desde memoria de procesos
+- [ ] **Formato similar** a strace real
+
+### **BONUS (puntos extra):**
+- [ ] **Parsing de flags** (O_RDONLY, PROT_READ, etc.)
+- [ ] **Manejo de señales** (SIGTERM, SIGINT, etc.)
+- [ ] **Output coloreado** o mejorado
+- [ ] **Opciones** (-p PID, -c counting, etc.)
+
+## 🚨 **Errores Comunes a Evitar:**
+
+- **Segmentation faults** con comandos inválidos
+- **Memory leaks** en Valgrind  
+- **No compila** en Ubuntu 14.10
+- **Makefile** con reglas incorrectas
+- **No detecta** arquitectura 32/64 bits
+- **Crash** con entradas extrañas
+
+## 📊 **Puntuación Esperada:**
+
+Si pasas **15+ pruebas**: ✅ **Excelente** (sobresaliente)  
+Si pasas **10-14 pruebas**: ✅ **Bueno** (aprobado sólido)  
+Si pasas **<10 pruebas**: ⚠️ **Necesita mejora**
+
+**¡Mucha suerte!** Con tu proyecto funcionando como lo hemos visto, deberías tener un **resultado excelente**. 🎯
