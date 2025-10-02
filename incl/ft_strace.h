@@ -120,7 +120,6 @@ void        free_syscall_info(t_syscall_info *info);
 void        ft_free_split(char **str);
 int         ft_strace(t_syscall_info *syscall_info, char **argv, char **envp);
 int         init_syscall_info(t_syscall_info *syscall_info, char **argv, char **envp);
-char        *get_at_fdcwd_name(long value);
 
 //*** auxiliary functions ***/
 

@@ -1,13 +1,6 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
-char    *get_at_fdcwd_name(long value)
-{
-    if (value == -100)
-        return "AT_FDCWD";
-    return NULL;
-}
-
 void    print_flags(long value, t_flag_entry *flags)
 {
     bool    first_flag = true;
@@ -63,7 +56,6 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
     {
         if (entry->arg_types[i] == VOID)
             break;
-        
         // SYS_write (1) o SYS_read (0): el segundo argumento (i=1) es el buffer y el tercero (i=2) es la longitud (count)
         if ((info->syscall_numb == 1 || info->syscall_numb == 0) && i == 1)
         {
@@ -83,17 +75,17 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
             print_flags(info->arguments[i], g_map_flags);
         else if (info->syscall_numb == 16 && i == 1)                // 16 es SYS_ioctl
             print_flags(info->arguments[i], g_ioctl_cmds);
-        else if (info->syscall_numb == 21 && i == 2)                // SYS_access, second argument
+        else if (info->syscall_numb == 21 && i == 2)                // SYS_access, segundo argument
             print_flags(info->arguments[i], g_access_flags);
         else if (info->syscall_numb == 257 && i == 0)                // SYS_openat, primer argumento
         {
-            char    *name = get_at_fdcwd_name(info->arguments[i]);
-            if (name)
-                ft_printf("%s", name);
+            if ((int)info->arguments[i] == -100)
+                ft_printf("AT_FDCWD, ");
             else
-                ft_printf("%d", info->arguments[i]);
+                ft_printf("%d, ", info->arguments[i]);
+            continue;
         }
-        else if (info->syscall_numb == 257 && i == 1)              // SYS_openat, segundo argumento
+        else if (info->syscall_numb == 257 && i == 1)              // SYS_openat, segundo argumento (pathname)
         {
             char temp_str[128];
             if (info->arguments[i] == 0)
@@ -102,19 +94,19 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
             {
                 ft_read_string_from_mem(pid, info->arguments[i], temp_str, sizeof(temp_str));
                 
-                if (temp_str[0] == '0' && temp_str[1] == 'x') // Si devolvió una dirección hex
-                    ft_printf("%p", (void *)info->arguments[i]); // Mostrar la dirección original
-                else if (temp_str[0] == '[') // Si devolvió un mensaje de error
-                    ft_printf("%p", (void *)info->arguments[i]); // Mostrar la dirección original  
+                if (temp_str[0] == '0' && temp_str[1] == 'x')       // Si devolvió una dirección hex
+                    ft_printf("%p", (void *)info->arguments[i]);    // Mostrar la dirección original
+                else if (temp_str[0] == '[')                        // Si devolvió un mensaje de error
+                    ft_printf("%p", (void *)info->arguments[i]);    // Mostrar la dirección original  
                 else
-                    ft_printf("\"%s\"", temp_str); // String válido
+                    ft_printf("\"%s\"", temp_str);                  // String válido
             }
         }
         else if (info->syscall_numb == 257 && i == 2)               // SYS_openat, tercer argumento son flags
             print_flags(info->arguments[i], g_openat_flags); 
         else 
         {
-            if (entry->arg_types[i] == INT)
+            if (entry->arg_types[i] == INT && info->arguments[i] != -100)
                 ft_printf("%d", info->arguments[i]);
             else if (entry->arg_types[i] == POINTER || entry->arg_types[i] == STRING)
             {

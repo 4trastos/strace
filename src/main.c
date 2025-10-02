@@ -3,9 +3,19 @@
 
 int  init_syscall_info(t_syscall_info *syscall_info, char **argv, char **envp)
 {
-    syscall_info->path = ft_findpath(envp);
-    syscall_info->command_path = ft_split(syscall_info->path, ':');
-    syscall_info->binary = get_binary(syscall_info->command_path, argv[1]);
+    if (access(argv[1], F_OK) == 0)
+    {
+        syscall_info->binary = ft_strdup(argv[1], sizeof(argv[1]));
+        syscall_info->command_path = NULL;
+    }
+    else
+    {
+        syscall_info->path = ft_findpath(envp);
+        syscall_info->command_path = ft_split(syscall_info->path, ':');
+        syscall_info->binary = get_binary(syscall_info->command_path, argv[1]);
+    }
+    if (!syscall_info->binary)
+        return (1);
     syscall_info->arch = detect_arch(syscall_info->binary);
     
     if (syscall_info->arch == -1 || syscall_info->arch == -2)

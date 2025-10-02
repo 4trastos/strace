@@ -13,8 +13,8 @@ t_syscall_entry *get_syscall_table(int arch)
 
 int         ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
 {
-    siginfo_t           siginfo;
     t_syscall_entry     *entry;
+    siginfo_t           siginfo;
     pid_t               pid;
     int                 status;
     int                 sig;

@@ -89,7 +89,10 @@ size_t  ft_strlen(char *str)
 
 int	ft_strncmp(char *src, char *str, int numb)
 {
-	int	i = 0;
+	int	i;
+    if (!str)
+        return(0);
+    i = 0;
 	while ((src[i] != '\0' || str[i] != '\0') && i < numb)
 	{
 		if (src[i] != str[i])

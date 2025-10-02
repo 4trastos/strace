@@ -13,19 +13,19 @@ void    ft_free_split(char **str)
     free(str);
 }
 
-void    free_syscall_info(t_syscall_info *info)
+void    free_syscall_info(t_syscall_info *syscall_info)
 {
-    if (info)
+    if (syscall_info)
     {
-        if (info->command_path)
+        if (syscall_info->command_path)
         {
-            ft_free_split(info->command_path);
-            info->command_path = NULL;
+            ft_free_split(syscall_info->command_path);
+            syscall_info->command_path = NULL;
         }
-        if (info->binary)
+        if (syscall_info->binary)
         {
-            free(info->binary);
-            info->binary = NULL;
+            free(syscall_info->binary);
+            syscall_info->binary = NULL;
         }
     }
 }

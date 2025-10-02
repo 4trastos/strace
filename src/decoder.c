@@ -16,6 +16,9 @@ char    *get_binary(char **command_path, char *command_arg)
     char    *aux;
     char    *exe;
 
+    if (!command_path)
+        return (NULL);
+
     while (*command_path)
     {
         aux = ft_strjoin(*command_path, "/");
@@ -32,8 +35,10 @@ char    *get_binary(char **command_path, char *command_arg)
 
 char    *ft_findpath(char **envp)
 {
-    while (ft_strncmp("PATH", *envp, 4))
+    while (ft_strncmp("PATH=", *envp, 5))
         envp++;
+    if (!*envp)
+        return (NULL);
     return (*envp + 5);
 }
 
