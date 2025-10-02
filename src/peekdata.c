@@ -28,7 +28,10 @@ int ft_read_word(pid_t pid, unsigned long addr, unsigned long *val)
     }
 
     // 2. Leer 8 bytes (sizeof(unsigned long) en 64-bit) desde la dirección 'addr'
-    bytes_read = pread(fd, val, sizeof(unsigned long), (off_t)addr);
+    //bytes_read = pread(fd, val, sizeof(unsigned long), (off_t)addr);
+    bytes_read = -1;
+    if (lseek(fd, (off_t)addr, SEEK_SET) != (off_t)-1)
+        bytes_read = read(fd, val, sizeof(unsigned long));
     close(fd);
     if (bytes_read !=  sizeof(unsigned long))
     {
