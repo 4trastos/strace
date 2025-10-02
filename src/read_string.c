@@ -1,5 +1,7 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
+#include <unistd.h>
+#include <fcntl.h>
 
 void    ft_read_string_from_mem(pid_t pid, unsigned long addr, char *buffer, size_t max_len)
 {
@@ -43,7 +45,10 @@ void    ft_read_string_from_mem(pid_t pid, unsigned long addr, char *buffer, siz
     }
 
     // 2. Leer hasta max_len - 1 bytes
-    bytes_read = pread(fd, buffer, max_len - 1, (off_t)addr);
+    //bytes_read = pread(fd, buffer, max_len - 1, (off_t)addr);
+    bytes_read = -1;
+    if (lseek(fd, (off_t)addr, SEEK_SET) != (off_t)-1)
+         bytes_read = read(fd, buffer, max_len - 1);
     close(fd);
 
     if (bytes_read <= 0)
