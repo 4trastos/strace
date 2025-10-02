@@ -48,15 +48,6 @@ void    ft_read_string_from_mem(pid_t pid, unsigned long addr, char *buffer, siz
 
     if (bytes_read <= 0)
     {
-        // addr_str = ft_itoa((int)addr);
-        // if (!addr_str)
-        //     return;
-        // ft_strcpy(buffer, "<");
-        // ft_strlcat(buffer, addr_str, max_len);
-        // ft_strlcat(buffer, ">", max_len);
-        // free(addr_str);
-        // return;
-        
         // Si falla la lectura, mostrar la dirección en formato hexadecimal
         ft_strcpy(buffer, "0x");
         unsigned long temp_addr = addr;
