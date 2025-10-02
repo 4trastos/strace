@@ -1,6 +1,6 @@
 NAME = ft_strace
 CC = gcc
-CFLAGS = -Wall -Werror -Wextra -g
+CFLAGS = -Wall -Werror -Wextra -g -std=c99
 RM = rm -f
 LIB = -lftprintf
 
