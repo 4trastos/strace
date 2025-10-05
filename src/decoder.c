@@ -92,12 +92,8 @@ void reading_entry_regs(pid_t pid, t_syscall_info *syscall_info)
 
         if (ptrace(PTRACE_GETREGSET, pid, (void *)NT_PRSTATUS, &iov) == -1)
         {
-            if (ptrace(PTRACE_GETREGS, pid, NULL, &regs32) == -1)
-            //if (ptrace(PTRACE_GETREGSET, pid, NULL, &regs32) == -1)
-            {
-                ft_printf("Error: GETREGS 32-bit ( %s )\n", strerror(errno));
-                return;
-            }
+            ft_printf("Error: GETREGS 32-bit ( %s )\n", strerror(errno));
+            return;
         }
         syscall_info->syscall_numb = regs32.orig_eax;
         syscall_info->arguments[0] = regs32.ebx;
@@ -134,12 +130,9 @@ void    reading_exit_regs(pid_t pid, t_syscall_info *syscall_info)
 
         if (ptrace(PTRACE_GETREGSET, pid, (void *)NT_PRSTATUS, &iov) == -1)
         {
-            //if (ptrace(PTRACE_GETREGSET, pid, NULL, &regist) == -1)
-            if (ptrace(PTRACE_GETREGS, pid, NULL, &regist) == -1)
-            {
-                ft_printf("Error: GETREGS 32-bit ( %s )\n", strerror(errno));
-                return;
-            }
+
+            ft_printf("Error: GETREGS 32-bit ( %s )\n", strerror(errno));
+            return;
         }
         syscall_info->return_value = regist.eax;
     }
