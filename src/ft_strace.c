@@ -113,7 +113,6 @@ int         ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                         }
 
                         entry = &table[syscall_info->syscall_numb];
-
                         if (!entry || !entry->name) {
                             ft_printf("syscall_%d(", syscall_info->syscall_numb);
                             syscall_state = 1;
@@ -135,13 +134,9 @@ int         ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                 else
                 {
                     if (ptrace(PTRACE_GETSIGINFO, pid, NULL, &siginfo) == 0)
-                    {
-                        //ft_printf("--- %s (%s) ---\n", get_signal_name(siginfo.si_signo), "señal");
                         ft_printf("--- %s {si_signo=%d, si_code=%d, si_pid=%d} ---\n", get_signal_name(siginfo.si_signo), siginfo.si_signo, siginfo.si_code, siginfo.si_pid);
-                    }
                     else
                         ft_printf("--- %s ---\n", get_signal_name(sig));
-                    //ptrace(PTRACE_SYSCALL, pid, NULL, siginfo.si_signo);
                     ptrace(PTRACE_SYSCALL, pid, NULL, sig);
                 }
             }
