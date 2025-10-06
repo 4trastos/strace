@@ -120,6 +120,7 @@ void        ft_read_string_from_mem(pid_t pid, unsigned long addr, char *buffer,
 void        ft_read_buffer_from_mem(pid_t pid, unsigned long addr, size_t len, char *buffer, size_t max_len);
 void        ft_read_argv(pid_t pid, unsigned long addr);
 void        unblock_signals(void);
+void        block_critical_signals(void);
 int         ft_read_word(pid_t pid, unsigned long addr, unsigned long *val);
 char        *get_error_name(long errnum);
 char        *get_signal_name(int signum);

@@ -62,6 +62,7 @@ int         ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
         
         while (1)
         {
+            unblock_signals();
             // Pide al hijo que reanude y espere la siguiente parada
             if (ptrace(PTRACE_SYSCALL, pid, NULL, NULL) == -1)
             {
@@ -84,7 +85,7 @@ int         ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                     ft_printf("\n+++ Exited with status %d +++\n", WEXITSTATUS(status));
                 break;
             }
-
+            block_critical_signals();
             // Si se detiene por un syscall (ENTRY o EXIT)
             if (WIFSTOPPED(status))
             {
