@@ -10,3 +10,16 @@ void    unblock_signals(void)
     sigemptyset(&empty);
     sigprocmask(SIG_SETMASK, &empty, NULL);
 }
+
+void    block_critical_signals(void)
+{
+    sigset_t    blocked;
+
+    sigemptyset(&blocked);
+    sigaddset(&blocked, SIGHUP);
+    sigaddset(&blocked, SIGINT);
+    sigaddset(&blocked, SIGQUIT);
+    sigaddset(&blocked, SIGPIPE);
+    sigaddset(&blocked, SIGTERM);
+    sigprocmask(SIG_BLOCK, &blocked, NULL);
+}
