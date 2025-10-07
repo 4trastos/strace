@@ -15,6 +15,21 @@ void print_blocked_signals(void)
     printf("----\n");
 }
 
+int should_skip_syscall(long syscall_numb)
+{
+    long skip_list[] = {
+        431,  // set_robust_list
+        -1
+    };
+
+    for (int i = 0; skip_list[i] != -1; i++)
+    {
+        if (syscall_numb == skip_list[i])
+            return (1);
+    }
+    return (0);
+}
+
 void    unblock_signals(void)
 {
     sigset_t    empty;

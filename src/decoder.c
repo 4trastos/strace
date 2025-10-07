@@ -77,13 +77,28 @@ void reading_entry_regs(pid_t pid, t_syscall_info *syscall_info)
             ft_printf("Error: GETREGSET 64-bit ( %s )\n", strerror(errno));
             return;
         }
+
         syscall_info->syscall_numb = regs.orig_rax;
-        syscall_info->arguments[0] = regs.rdi;
-        syscall_info->arguments[1] = regs.rsi;
-        syscall_info->arguments[2] = regs.rdx;
-        syscall_info->arguments[3] = regs.r10;
-        syscall_info->arguments[4] = regs.r8;
-        syscall_info->arguments[5] = regs.r9;
+
+        if (syscall_info->syscall_numb == 56) // SYS_clone
+        {
+            // Para clone en x86_64: clone(flags, child_stack, parent_tid, child_tid, tls)
+            syscall_info->arguments[0] = regs.rdi;  // flags
+            syscall_info->arguments[1] = regs.rsi;  // child_stack  
+            syscall_info->arguments[2] = regs.rdx;  // parent_tid
+            syscall_info->arguments[3] = regs.r10;  // child_tid
+            syscall_info->arguments[4] = regs.r8;   // tls
+            syscall_info->arguments[5] = regs.r9;   // (no usado)
+        }
+        else
+        {
+            syscall_info->arguments[0] = regs.rdi;
+            syscall_info->arguments[1] = regs.rsi;
+            syscall_info->arguments[2] = regs.rdx;
+            syscall_info->arguments[3] = regs.r10;
+            syscall_info->arguments[4] = regs.r8;
+            syscall_info->arguments[5] = regs.r9;
+        }
     }
     if (syscall_info->arch == ARCH_32)
     {
@@ -121,6 +136,7 @@ void    reading_exit_regs(pid_t pid, t_syscall_info *syscall_info)
             ft_printf("Error: GETREGSET ( %s )\n", strerror(errno));
             return;
         }
+        syscall_info->syscall_numb = regs.orig_rax; 
         syscall_info->return_value = regs.rax;
     }
     if (syscall_info->arch == ARCH_32)
@@ -134,6 +150,7 @@ void    reading_exit_regs(pid_t pid, t_syscall_info *syscall_info)
             ft_printf("Error: GETREGS 32-bit ( %s )\n", strerror(errno));
             return;
         }
+        syscall_info->syscall_numb = regist.orig_eax;
         syscall_info->return_value = regist.eax;
     }
 }

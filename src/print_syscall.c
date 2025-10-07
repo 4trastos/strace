@@ -26,7 +26,7 @@ void    print_flags(long value, t_flag_entry *flags)
     {
         if (!first_flag)
             ft_printf("|");
-        ft_printf("%p", remaining_value);
+        ft_printf("%p", (void *)remaining_value);
     }
 }
 
@@ -50,12 +50,103 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
     if (info->syscall_numb < 0)
         return;
     
+    // **MANEJO ESPECÍFICO PARA SYS_exit (60) y SYS_exit_group (231) **
+    if (info->syscall_numb == 60 || info->syscall_numb == 231)
+    {
+        ft_printf("%s(%d", entry->name, (int)info->arguments[0]);
+        // Cierre manual para syscalls de 1 argumento
+        for (int i = 1; i < 6; i++)
+        {
+            if (entry->arg_types[i] != VOID)
+                ft_printf(", ...");
+        }
+        ft_printf(")");
+        return;
+    }
+
+    if (info->syscall_numb == 56) // SYS_clone - ENTRY
+    {
+        ft_printf("%s(", entry->name);
+        //ft_printf("clone(");
+        
+        // **ORDEN CORRECTO según strace: child_stack primero**
+        // child_stack (arg1)
+        if (info->arguments[1] == 0)
+            ft_printf("child_stack=NULL");
+        else
+            ft_printf("child_stack=%p", (void *)info->arguments[1]);
+        
+        // flags (arg0)
+        long flags = info->arguments[0];
+        ft_printf(", flags=");
+        
+        // **MANEJAR SIGCHLD CORRECTAMENTE**
+        int has_sigchld = 0;
+        int sig = flags & 0xFF;
+        if (sig == SIGCHLD)
+        {
+            has_sigchld = 1;
+            flags &= ~0xFF;
+        }
+        
+        // Imprimir flags de clone
+        if (flags != 0)
+        {
+            print_flags(flags, g_clone_flags);
+            if (has_sigchld)
+                ft_printf("|SIGCHLD");
+        }
+        else if (has_sigchld)
+            ft_printf("SIGCHLD");
+        else
+            ft_printf("0");
+        
+        // child_tidptr (arg3) - El argumento parent_tid (arg2) es el que sigue en strace real, pero lo omitimos. 
+        // El orden de ft_strace está siguiendo el orden de registros (rdi, rsi, rdx, r10, r8, r9), no el de strace.
+        ft_printf(", parent_tid=%p", (void *)info->arguments[2]);           // parent_tid
+        ft_printf(", child_tidptr=%p", (void *)info->arguments[3]);         // child_tid
+        ft_printf(", tls=%p", (void *)info->arguments[4]);                  // tls (r8)
+        return;
+    }
+
+    if (info->syscall_numb == 61) // SYS_wait4
+    {
+        ft_printf("%s(", entry->name);
+        //ft_printf("wait4(");
+        
+        // pid (arg0)
+        if ((pid_t)info->arguments[0] == -1)
+            ft_printf("-1");
+        else
+            ft_printf("%d", (int)info->arguments[0]);
+        
+        // status (arg1)  
+        if (info->arguments[1] == 0)
+            ft_printf(", NULL");
+        else
+            ft_printf(", %p", (void *)info->arguments[1]);
+        
+        // options (arg2)
+        ft_printf(" ,");
+        print_flags(info->arguments[2], g_wait4_flags);
+        
+        // rusage (arg3)
+        if (info->arguments[3] == 0)
+            ft_printf(", NULL");
+        else
+            ft_printf(", %p", (void *)info->arguments[3]);
+        
+        ft_printf(")");
+        return;
+    }
+    
     ft_printf("%s(", entry->name);
 
     for (int i = 0; i < 6; i++)
     {
         if (entry->arg_types[i] == VOID)
             break;
+        
         // SYS_write (1) o SYS_read (0): el segundo argumento (i=1) es el buffer y el tercero (i=2) es la longitud (count)
         if ((info->syscall_numb == 1 || info->syscall_numb == 0) && i == 1)
         {
@@ -65,6 +156,7 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
             else
                 ft_read_buffer_from_mem(pid, info->arguments[i], info->arguments[2], temp_buffer, sizeof(temp_buffer));
         }
+        
         else if ((info->syscall_numb == 59) && (i == 1 || i == 2))  // SYS_execve (59): Lectura de vector de argv/envp (i=1 y i=2)
             ft_read_argv(pid, info->arguments[i]);
 
@@ -82,7 +174,7 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
             if ((int)info->arguments[i] == -100)
                 ft_printf("AT_FDCWD, ");
             else
-                ft_printf("%d, ", info->arguments[i]);
+                ft_printf("%d, ", (int)info->arguments[i]);
             continue;
         }
         else if (info->syscall_numb == 257 && i == 1)              // SYS_openat, segundo argumento (pathname)
@@ -107,7 +199,7 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
         else 
         {
             if (entry->arg_types[i] == INT && info->arguments[i] != -100)
-                ft_printf("%d", info->arguments[i]);
+                ft_printf("%d", (int)info->arguments[i]);
             else if (entry->arg_types[i] == POINTER || entry->arg_types[i] == STRING)
             {
                 if (entry->arg_types[i] == STRING)
@@ -133,6 +225,25 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
 
 void    print_syscall_exit(t_syscall_info *info)
 {
+    if (info->syscall_numb == 56)                           // SYS clone
+    {
+        if (info->return_value < 0)
+            ft_printf(") = -1 %s\n", get_error_name(info->return_value));
+        else if ((int)info->return_value == 0)
+            ft_printf(") = 0\n");                           // hijo
+        else
+            ft_printf(") = %d\n", (int)info->return_value); // padre
+        return;
+    }
+    
+    // ** FIX: Suprimir el retorno para exit (60) y exit_group (231) **
+    if (info->syscall_numb == 60 || info->syscall_numb == 231)
+    {
+        // Imprimir ) = ? y dejar que el bucle principal (waitpid) imprima el estado final.
+        ft_printf(") = ?\n");
+        return;
+    }
+
     if (info->return_value < 0)
         ft_printf(") = -1 %s\n", get_error_name(info->return_value));
     else
@@ -148,6 +259,6 @@ void    print_syscall_exit(t_syscall_info *info)
             ft_printf(") = %p\n", (void *)info->return_value);
         }
         else
-            ft_printf(") = %d\n", info->return_value);
+            ft_printf(") = %d\n", (int)info->return_value);
     }
 }
