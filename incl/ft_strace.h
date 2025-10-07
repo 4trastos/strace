@@ -12,6 +12,7 @@
 # include <sys/wait.h>
 # include <sys/user.h>
 # include <sys/uio.h>
+# include <sys/queue.h>
 # include <errno.h>
 # include <signal.h>
 # include <fcntl.h>
@@ -48,6 +49,18 @@ struct user_regs_struct_32
     uint32_t    xss;
 };
 # endif
+
+typedef struct s_traced_process
+{
+    pid_t       pid;
+    int         syscall_state;      // 0 = ENTRY, 1 = EXIT
+    TAILQ_ENTRY(s_traced_process) entries;
+}   t_traced_process;
+
+struct traced_process_head {
+    t_traced_process *tqh_first;
+    t_traced_process **tqh_last;
+};
 
 typedef enum
 {
@@ -103,6 +116,7 @@ extern t_flag_entry g_ioctl_cmds[];
 extern t_flag_entry g_clone_flags[];
 extern t_flag_entry g_wait4_flags[];
 extern t_signal_entry g_signals_table[];
+extern struct traced_process_head s_traced_process;
 
 
 //*** CPU logic ***/

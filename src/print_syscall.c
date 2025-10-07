@@ -112,7 +112,6 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
     if (info->syscall_numb == 61) // SYS_wait4
     {
         ft_printf("%s(", entry->name);
-        //ft_printf("wait4(");
         
         // pid (arg0)
         if ((pid_t)info->arguments[0] == -1)
