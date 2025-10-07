@@ -1,19 +1,30 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
+int is_flag_zero(t_flag_entry *flags)
+{
+    for (int i = 0; flags[i].name != NULL; i++)
+    {
+        if (flags[i].value == 0)
+            return 1;
+    }
+    return 0;
+}
+
 void    print_flags(long value, t_flag_entry *flags)
 {
     bool    first_flag = true;
     long    remaining_value = value;
 
-    if (value == 0)
+    if (value == 0 && !is_flag_zero(flags))
     {
         ft_printf("0");
         return;
     }
+
     for (int i = 0; flags[i].name != NULL; i++)
     {
-        if ((remaining_value & flags[i].value) == flags[i].value)
+        if ((remaining_value & flags[i].value) && flags[i].value != 0)
         {
             if (!first_flag)
                 ft_printf("|");
@@ -28,6 +39,8 @@ void    print_flags(long value, t_flag_entry *flags)
             ft_printf("|");
         ft_printf("%p", (void *)remaining_value);
     }
+    else if (first_flag && value == 0)
+        ft_printf("0");
 }
 
 char *get_error_name(long errnum)
@@ -224,40 +237,50 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
 
 void    print_syscall_exit(t_syscall_info *info)
 {
-    if (info->syscall_numb == 56)                           // SYS clone
-    {
-        if (info->return_value < 0)
-            ft_printf(") = -1 %s\n", get_error_name(info->return_value));
-        else if ((int)info->return_value == 0)
-            ft_printf(") = 0\n");                           // hijo
-        else
-            ft_printf(") = %d\n", (int)info->return_value); // padre
-        return;
-    }
-    
-    // ** FIX: Suprimir el retorno para exit (60) y exit_group (231) **
-    if (info->syscall_numb == 60 || info->syscall_numb == 231)
-    {
-        // Imprimir ) = ? y dejar que el bucle principal (waitpid) imprima el estado final.
-        ft_printf(") = ?\n");
-        return;
-    }
-
     if (info->return_value < 0)
-        ft_printf(") = -1 %s\n", get_error_name(info->return_value));
+    {
+        char *err_name = get_error_name(info->return_value);
+        char *err_str = strerror(-info->return_value);
+        ft_printf(") = -1 %s (%s)\n", err_name, err_str);
+    }
     else
     {
-        if (info->syscall_numb == 9 ||                  // mmap
-            info->syscall_numb == 12 ||                 // brk
-            info->syscall_numb == 59 ||                 // execve
-            info->syscall_numb == 11 ||                 // munmap (a veces)
-            info->syscall_numb == 25 ||                 // mremap
-            info->syscall_numb == 192 ||                // mmap2 (32-bit)
-            (info->return_value > 0xffffffff))          // Valores muy grandes
+
+        if (info->syscall_numb == 56)                           // SYS clone
         {
-            ft_printf(") = %p\n", (void *)info->return_value);
+            if (info->return_value < 0)
+                ft_printf(") = -1 %s\n", get_error_name(info->return_value));
+            else if ((int)info->return_value == 0)
+                ft_printf(") = 0\n");                           // hijo
+            else
+                ft_printf(") = %d\n", (int)info->return_value); // padre
+            return;
         }
+        
+        // ** FIX: Suprimir el retorno para exit (60) y exit_group (231) **
+        if (info->syscall_numb == 60 || info->syscall_numb == 231)
+        {
+            // Imprimir ) = ? y dejar que el bucle principal (waitpid) imprima el estado final.
+            ft_printf(") = ?\n");
+            return;
+        }
+    
+        if (info->return_value < 0)
+            ft_printf(") = -1 %s\n", get_error_name(info->return_value));
         else
-            ft_printf(") = %d\n", (int)info->return_value);
+        {
+            if (info->syscall_numb == 9 ||                  // mmap
+                info->syscall_numb == 12 ||                 // brk
+                info->syscall_numb == 59 ||                 // execve
+                info->syscall_numb == 11 ||                 // munmap (a veces)
+                info->syscall_numb == 25 ||                 // mremap
+                info->syscall_numb == 192 ||                // mmap2 (32-bit)
+                (info->return_value > 0xffffffff))          // Valores muy grandes
+            {
+                ft_printf(") = %p\n", (void *)info->return_value);
+            }
+            else
+                ft_printf(") = %d\n", (int)info->return_value);
+        }
     }
 }
