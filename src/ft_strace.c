@@ -207,7 +207,28 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
             else // Otras señales
             {
                 if (sig == SIGTRAP)
+                {
+                    ptrace(PTRACE_SYSCALL, current_proc->pid, NULL, sig);
                     continue;
+                }
+
+                if (sig == SIGSEGV)
+                {
+                    if (ptrace(PTRACE_GETSIGINFO, current_proc->pid, NULL, &siginfo) == 0)
+                    {
+                        const char *segv_code = "SEGV_MAPERR";
+                        if (siginfo.si_code == SEGV_ACCERR)
+                            segv_code = "SEGV_ACCERR";
+                        
+                        ft_printf("--- %s {si_signo=%s, si_code=%s, si_addr=%p} ---\n", 
+                                get_signal_name(siginfo.si_signo),
+                                get_signal_name(siginfo.si_signo),
+                                segv_code,
+                                siginfo.si_addr);
+                    }
+                    ptrace(PTRACE_SYSCALL, current_proc->pid, NULL, sig);
+                    continue;
+                }
 
                 if (ptrace(PTRACE_GETSIGINFO, current_proc->pid, NULL, &siginfo) == 0)
                 {
@@ -216,6 +237,9 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                             get_signal_name(siginfo.si_signo),
                             siginfo.si_code);
                 }
+                else
+                    ft_printf("--- %s ---\n", get_signal_name(sig));
+                ptrace(PTRACE_SYSCALL, current_proc->pid, NULL, sig);
             }
         }
     }

@@ -1,16 +1,6 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
-char  *get_signal_name(int signum)
-{
-    for (int i = 0; g_signals_table[i].name != NULL; i++)
-    {
-        if (g_signals_table[i].signum == signum)
-            return (g_signals_table[i].name);
-    }
-    return ("UNKNOWN");
-}
-
 char    *get_binary(char **command_path, char *command_arg)
 {
     char    *aux;

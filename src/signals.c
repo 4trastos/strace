@@ -3,6 +3,19 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
+char  *get_signal_name(int signum)
+{
+    for (int i = 0; g_signals_table[i].name != NULL; i++)
+    {
+        if (g_signals_table[i].signum == signum)
+            return (g_signals_table[i].name);
+    }
+
+    if (signum == SIGSEGV)
+        return("SIGSEGV");
+    return ("UNKNOWN");
+}
+
 void print_blocked_signals(void)
 {
     sigset_t current;
@@ -34,8 +47,8 @@ void    unblock_signals(void)
 {
     sigset_t    empty;
     
-    sigemptyset(&empty);
-    sigprocmask(SIG_SETMASK, &empty, NULL);
+    sigemptyset(&empty);                        // Inicializa a 0 con sigemptyset
+    sigprocmask(SIG_SETMASK, &empty, NULL);     // SIG_SETMASK con &empty
 }
 
 void    block_critical_signals(void)
@@ -48,5 +61,5 @@ void    block_critical_signals(void)
     sigaddset(&blocked, SIGQUIT);
     sigaddset(&blocked, SIGPIPE);
     sigaddset(&blocked, SIGTERM);
-    sigprocmask(SIG_BLOCK, &blocked, NULL);
+    sigprocmask(SIG_BLOCK, &blocked, NULL);     // SIG_BLOCK con &blocked
 }
