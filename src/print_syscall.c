@@ -24,7 +24,8 @@ void    print_flags(long value, t_flag_entry *flags)
 
     for (int i = 0; flags[i].name != NULL; i++)
     {
-        if ((remaining_value & flags[i].value) && flags[i].value != 0)
+        // Verificar igualdad exacta, no solo bit set
+        if ((remaining_value & flags[i].value) == flags[i].value && flags[i].value != 0)
         {
             if (!first_flag)
                 ft_printf("|");
@@ -60,11 +61,39 @@ char *get_error_name(long errnum)
 
 void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *entry)
 {
+    pthread_mutex_lock(&output_mutex);
     if (info->syscall_numb < 0)
         return;
     
-    // **MANEJO ESPECÍFICO PARA SYS_exit (60) y SYS_exit_group (231) **
-    if (info->syscall_numb == 60 || info->syscall_numb == 231)
+    if (info->syscall_numb == 230) // SYS_clock_nanosleep
+    {
+        ft_printf("%s(", entry->name);
+        
+        // clock_id (arg0)
+        if (info->arguments[0] == 0)
+            ft_printf("CLOCK_REALTIME");
+        else if (info->arguments[0] == 1)
+            ft_printf("CLOCK_MONOTONIC");
+        else
+            ft_printf("%d", (int)info->arguments[0]);
+        
+        ft_printf(", ");
+        
+        // flags (arg1)
+        if (info->arguments[1] == 0)
+            ft_printf("0");
+        else if (info->arguments[1] == 1)
+            ft_printf("TIMER_ABSTIME");
+        else
+            ft_printf("%d", (int)info->arguments[1]);
+        
+        ft_printf(", %p, %p", (void *)info->arguments[2], (void *)info->arguments[3]);
+        
+        pthread_mutex_unlock(&output_mutex);
+        return;
+    }
+    
+    if (info->syscall_numb == 60 || info->syscall_numb == 231)  // SYS_exit (60) y SYS_exit_group (231)
     {
         ft_printf("%s(%d", entry->name, (int)info->arguments[0]);
         // Cierre manual para syscalls de 1 argumento
@@ -74,15 +103,15 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
                 ft_printf(", ...");
         }
         ft_printf(")");
+        pthread_mutex_unlock(&output_mutex);
         return;
     }
 
     if (info->syscall_numb == 56) // SYS_clone - ENTRY
     {
         ft_printf("%s(", entry->name);
-        //ft_printf("clone(");
         
-        // **ORDEN CORRECTO según strace: child_stack primero**
+        // MOstrar argumentos de strace real
         // child_stack (arg1)
         if (info->arguments[1] == 0)
             ft_printf("child_stack=NULL");
@@ -116,9 +145,10 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
         
         // child_tidptr (arg3) - El argumento parent_tid (arg2) es el que sigue en strace real, pero lo omitimos. 
         // El orden de ft_strace está siguiendo el orden de registros (rdi, rsi, rdx, r10, r8, r9), no el de strace.
-        ft_printf(", parent_tid=%p", (void *)info->arguments[2]);           // parent_tid
+        //ft_printf(", parent_tid=%p", (void *)info->arguments[2]);           // parent_tid
         ft_printf(", child_tidptr=%p", (void *)info->arguments[3]);         // child_tid
-        ft_printf(", tls=%p", (void *)info->arguments[4]);                  // tls (r8)
+        //ft_printf(", tls=%p", (void *)info->arguments[4]);                  // tls (r8)
+        pthread_mutex_unlock(&output_mutex);
         return;
     }
 
@@ -148,7 +178,7 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
         else
             ft_printf(", %p", (void *)info->arguments[3]);
         
-        ft_printf(")");
+        pthread_mutex_unlock(&output_mutex);
         return;
     }
     
@@ -233,10 +263,12 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
         if (i < 5 && entry->arg_types[i + 1] != VOID)
             ft_printf(", ");
     }
+    pthread_mutex_unlock(&output_mutex);
 }
 
 void    print_syscall_exit(t_syscall_info *info)
 {
+    pthread_mutex_lock(&output_mutex);
     if (info->return_value < 0)
     {
         char *err_name = get_error_name(info->return_value);
@@ -254,14 +286,15 @@ void    print_syscall_exit(t_syscall_info *info)
                 ft_printf(") = 0\n");                           // hijo
             else
                 ft_printf(") = %d\n", (int)info->return_value); // padre
+            pthread_mutex_unlock(&output_mutex);
             return;
         }
         
         // ** FIX: Suprimir el retorno para exit (60) y exit_group (231) **
         if (info->syscall_numb == 60 || info->syscall_numb == 231)
         {
-            // Imprimir ) = ? y dejar que el bucle principal (waitpid) imprima el estado final.
             ft_printf(") = ?\n");
+            pthread_mutex_unlock(&output_mutex);
             return;
         }
     
@@ -283,4 +316,5 @@ void    print_syscall_exit(t_syscall_info *info)
                 ft_printf(") = %d\n", (int)info->return_value);
         }
     }
+    pthread_mutex_unlock(&output_mutex);
 }

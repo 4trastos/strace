@@ -1,6 +1,21 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
+void    *ft_memset(void *b, int c, size_t len)
+{
+	unsigned char	*j;
+	size_t			i;
+
+	j = b;
+	i = 0;
+	while (i < len)
+	{
+		j[i] = (unsigned char)c;
+		i++;
+	}
+	return (b);
+}
+
 size_t	ft_strlcpy(char *dst, char *src, size_t dstsize)
 {
     size_t  slen;

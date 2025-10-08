@@ -13,6 +13,14 @@ char  *get_signal_name(int signum)
 
     if (signum == SIGSEGV)
         return("SIGSEGV");
+    else if (signum == SIGINT)
+        return("SIGINT");
+    else if (signum == SIGTERM)
+        return("SIGTERM");
+    else if (signum == SIGKILL)
+        return("SIGKILL");
+    else if (signum == SIGSTOP)
+        return ("SIGSTOP");
     return ("UNKNOWN");
 }
 
@@ -30,8 +38,18 @@ void print_blocked_signals(void)
 
 int should_skip_syscall(long syscall_numb)
 {
+    (void) syscall_numb;
     long skip_list[] = {
-        431,  // set_robust_list
+        431,  // set_robust_list (en threads)
+        158,  // arch_prctl (en threads)
+        334,  // rseq (en threads)
+        13,   // rt_sigaction (en threads)
+        14,   // rt_sigprocmask (en threads)
+        435,  // syscall_435
+        9,    // mmap (en threads)
+        318,  // getrandom (en threads)
+        12,   // brk (en threads)
+        34,   // pause (en threads)
         -1
     };
 

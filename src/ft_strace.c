@@ -3,6 +3,8 @@
 #include "../incl/ft_strace.h"
 #include "../lib/printf/ft_printf.h"
 
+pthread_mutex_t output_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 t_syscall_entry *get_syscall_table(int arch)
 {
     if (arch == ARCH_64)
@@ -23,7 +25,7 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
     int                 status;
     int                 sig;
 
-    // Inicializar la lista
+    // Inicializar la lista de procesos
     struct traced_process_head s_traced_process;
     TAILQ_INIT(&s_traced_process);
 
@@ -44,6 +46,8 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
     }
     else
     { 
+        block_critical_signals();
+
         // Configurar tracing
         if (ptrace(PTRACE_SEIZE, pid, NULL, NULL) == -1)
         {
@@ -71,12 +75,12 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
             return(1);
         main_proc->pid = pid;
         main_proc->syscall_state = 0;
+        main_proc->is_thread = 0;  // ← Proceso principal no es thread
+        main_proc->arch = syscall_info->arch;
         TAILQ_INSERT_TAIL(&s_traced_process, main_proc, entries);
         
         while (!TAILQ_EMPTY(&s_traced_process))
         {
-            unblock_signals();
-
             // TODOS los procesos usando proc->pid
             t_traced_process *proc;
             TAILQ_FOREACH(proc, &s_traced_process, entries)
@@ -107,20 +111,25 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                     break;
             }
 
-            // Si es un proceso nuevo, añadirlo
+            // Nuevo proceso o thread
             if (!current_proc && WIFSTOPPED(status))
             {
                 current_proc = malloc(sizeof(t_traced_process));
-                if (!current_proc) continue;
+                if (!current_proc)
+                    continue;
                 current_proc->pid = wait_pid;
                 current_proc->syscall_state = 0;
+                // Verificar si es un thread (podrías usar información de /proc/pid/status)
+                current_proc->is_thread = is_thread_process(wait_pid);
+                current_proc->arch = syscall_info->arch;
                 TAILQ_INSERT_TAIL(&s_traced_process, current_proc, entries);
                 continue;
             }
 
-            if (!current_proc) continue;
+            if (!current_proc)
+                continue;
 
-            // Verificar terminación
+            // Procesos terminados
             if (WIFEXITED(status))
             {
                 if (current_proc->pid == pid)
@@ -141,20 +150,19 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                 continue;
             }
 
-            if (!WIFSTOPPED(status)) continue;
+            if (!WIFSTOPPED(status))
+                continue;
             
             block_critical_signals();
 
             sig = WSTOPSIG(status);
 
-            // Manejar eventos ptrace
+            // Eventos ptrace
             if (sig == SIGTRAP)
             {
                 int event = (status >> 16) & 0xffff;
                 if (event == PTRACE_EVENT_CLONE || event == PTRACE_EVENT_FORK || event == PTRACE_EVENT_VFORK)
                     continue;
-                /* else if (event == PTRACE_EVENT_EXIT)
-                    continue; */
             }
             
             // Syscall stop
@@ -170,7 +178,7 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                         continue;
                     }
 
-                    if (should_skip_syscall(syscall_info->syscall_numb))
+                    if (should_skip_process_syscall(current_proc->pid, syscall_info->syscall_numb, pid))
                     {
                         current_proc->syscall_state = 1;
                         continue;
@@ -199,15 +207,22 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                         continue;
                     }
 
-                    if (!should_skip_syscall(syscall_info->syscall_numb))
+                    if (!should_skip_process_syscall(current_proc->pid, syscall_info->syscall_numb, pid))
                         print_syscall_exit(syscall_info);
                     current_proc->syscall_state = 0;
                 }
             }
-            else // Otras señales
+            else // señales
             {
                 if (sig == SIGTRAP)
                 {
+                    ptrace(PTRACE_SYSCALL, current_proc->pid, NULL, sig);
+                    continue;
+                }
+
+                if (sig == SIGINT)
+                {
+                    ft_printf("--- %s {si_signo=%s, si_code=SI_KERNEL} ---\n", get_signal_name(sig), get_signal_name(sig));
                     ptrace(PTRACE_SYSCALL, current_proc->pid, NULL, sig);
                     continue;
                 }
@@ -221,21 +236,17 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                             segv_code = "SEGV_ACCERR";
                         
                         ft_printf("--- %s {si_signo=%s, si_code=%s, si_addr=%p} ---\n", 
-                                get_signal_name(siginfo.si_signo),
-                                get_signal_name(siginfo.si_signo),
-                                segv_code,
-                                siginfo.si_addr);
+                                get_signal_name(siginfo.si_signo), get_signal_name(siginfo.si_signo), segv_code, siginfo.si_addr);
                     }
+                    // 1. Reenviar la señal (el kernel la entregará, terminando el proceso)
                     ptrace(PTRACE_SYSCALL, current_proc->pid, NULL, sig);
                     continue;
                 }
 
                 if (ptrace(PTRACE_GETSIGINFO, current_proc->pid, NULL, &siginfo) == 0)
                 {
-                    ft_printf("--- %s {si_signo=%s, si_code=%d} ---\n", 
-                            get_signal_name(siginfo.si_signo),
-                            get_signal_name(siginfo.si_signo),
-                            siginfo.si_code);
+                    ft_printf("--- %s {si_signo=%s, si_code=%d} ---\n", get_signal_name(siginfo.si_signo),
+                            get_signal_name(siginfo.si_signo), siginfo.si_code);
                 }
                 else
                     ft_printf("--- %s ---\n", get_signal_name(sig));

@@ -6,6 +6,11 @@
 # include <string.h>
 # include <stdbool.h>
 # include <unistd.h>
+# include <pthread.h>
+# include <errno.h>
+# include <signal.h>
+# include <fcntl.h>
+# include <elf.h>
 # include <sys/types.h>
 # include <sys/ptrace.h>
 # include <sys/reg.h>
@@ -13,10 +18,8 @@
 # include <sys/user.h>
 # include <sys/uio.h>
 # include <sys/queue.h>
-# include <errno.h>
-# include <signal.h>
-# include <fcntl.h>
-# include <elf.h>
+# include <sys/utsname.h>
+# include <sys/stat.h>
 
 # define    EI_CLASS    4
 # define    ELFCLASS32  1
@@ -26,6 +29,7 @@
 
 # define    MAX_SYSCALLS_32 387
 # define    MAX_SYSCALLS_64 462
+# define    MAX_PID 65536             // cat /proc/sys/kernel/pid_max 
 
 # ifdef __x86_64__
 struct user_regs_struct_32
@@ -53,7 +57,9 @@ struct user_regs_struct_32
 typedef struct s_traced_process
 {
     pid_t       pid;
+    int         arch;
     int         syscall_state;      // 0 = ENTRY, 1 = EXIT
+    int         is_thread;
     TAILQ_ENTRY(s_traced_process) entries;
 }   t_traced_process;
 
@@ -117,13 +123,17 @@ extern t_flag_entry g_clone_flags[];
 extern t_flag_entry g_wait4_flags[];
 extern t_signal_entry g_signals_table[];
 extern struct traced_process_head s_traced_process;
+extern pthread_mutex_t output_mutex;
 
 
 //*** CPU logic ***/
 
 char        *ft_findpath(char **envp);
-int         detect_arch(char *path);
 char        *get_binary(char **command_path, char *command_arg);
+int         detect_arch(char *path);
+int         detect_process_arch(pid_t pid);
+int         is_thread_process(pid_t pid);
+int         should_skip_process_syscall(pid_t pid, long syscall_numb, pid_t main_pid);
 
 //*** comunications & signals ***/
 
@@ -159,5 +169,6 @@ char        *ft_strcpy(char *dst, const char *src);
 char	    *ft_itoa(int number);
 size_t      ft_strlcat (char *dst, char *src, size_t len);
 size_t      ft_strlcpy(char *dst, char *src, size_t dstsize);
+void        *ft_memset(void *b, int c, size_t len);
 
 #endif
