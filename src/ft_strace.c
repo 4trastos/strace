@@ -132,19 +132,23 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
             // Procesos terminados
             if (WIFEXITED(status))
             {
+                pthread_mutex_lock(&output_mutex);
                 if (current_proc->pid == pid)
                 {
                     ft_printf("exit_group(%d) = ?\n", WEXITSTATUS(status));
                     ft_printf("+++ exited with %d +++\n", WEXITSTATUS(status));
                 }
+                pthread_mutex_unlock(&output_mutex);
                 TAILQ_REMOVE(&s_traced_process, current_proc, entries);
                 free(current_proc);
                 continue;
             }
             else if (WIFSIGNALED(status))
             {
+                pthread_mutex_lock(&output_mutex);
                 char *sig_name = get_signal_name(WTERMSIG(status));
                 ft_printf("+++ killed by %s +++\n", sig_name);
+                pthread_mutex_unlock(&output_mutex);
                 TAILQ_REMOVE(&s_traced_process, current_proc, entries);
                 free(current_proc);
                 continue;
@@ -222,22 +226,26 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
 
                 if (sig == SIGINT)
                 {
+                    pthread_mutex_lock(&output_mutex);
                     ft_printf("--- %s {si_signo=%s, si_code=SI_KERNEL} ---\n", get_signal_name(sig), get_signal_name(sig));
+                    pthread_mutex_unlock(&output_mutex);
                     ptrace(PTRACE_SYSCALL, current_proc->pid, NULL, sig);
                     continue;
                 }
 
                 if (sig == SIGSEGV)
                 {
+                    pthread_mutex_lock(&output_mutex);
                     if (ptrace(PTRACE_GETSIGINFO, current_proc->pid, NULL, &siginfo) == 0)
                     {
                         const char *segv_code = "SEGV_MAPERR";
                         if (siginfo.si_code == SEGV_ACCERR)
                             segv_code = "SEGV_ACCERR";
-                        
+
                         ft_printf("--- %s {si_signo=%s, si_code=%s, si_addr=%p} ---\n", 
                                 get_signal_name(siginfo.si_signo), get_signal_name(siginfo.si_signo), segv_code, siginfo.si_addr);
                     }
+                    pthread_mutex_unlock(&output_mutex);
                     // 1. Reenviar la señal (el kernel la entregará, terminando el proceso)
                     ptrace(PTRACE_SYSCALL, current_proc->pid, NULL, sig);
                     continue;
@@ -245,11 +253,17 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
 
                 if (ptrace(PTRACE_GETSIGINFO, current_proc->pid, NULL, &siginfo) == 0)
                 {
+                    pthread_mutex_lock(&output_mutex);
                     ft_printf("--- %s {si_signo=%s, si_code=%d} ---\n", get_signal_name(siginfo.si_signo),
                             get_signal_name(siginfo.si_signo), siginfo.si_code);
+                    pthread_mutex_unlock(&output_mutex);
                 }
                 else
+                {
+                    pthread_mutex_lock(&output_mutex);
                     ft_printf("--- %s ---\n", get_signal_name(sig));
+                    pthread_mutex_unlock(&output_mutex);
+                }
                 ptrace(PTRACE_SYSCALL, current_proc->pid, NULL, sig);
             }
         }
