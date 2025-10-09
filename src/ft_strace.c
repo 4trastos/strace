@@ -103,7 +103,7 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                 continue;
             }
 
-            // Buscar el proceso en nuestra lista
+            // Buscar el proceso en la lista
             t_traced_process *current_proc = NULL;
             TAILQ_FOREACH(current_proc, &s_traced_process, entries)
             {
@@ -119,7 +119,7 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                     continue;
                 current_proc->pid = wait_pid;
                 current_proc->syscall_state = 0;
-                // Verificar si es un thread (podrías usar información de /proc/pid/status)
+                // Verificar si es un thread
                 current_proc->is_thread = is_thread_process(wait_pid);
                 current_proc->arch = syscall_info->arch;
                 TAILQ_INSERT_TAIL(&s_traced_process, current_proc, entries);
@@ -132,21 +132,21 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
             // Procesos terminados
             if (WIFEXITED(status))
             {
-                pthread_mutex_lock(&output_mutex);
                 if (current_proc->pid == pid)
                 {
+                    pthread_mutex_lock(&output_mutex);
                     ft_printf("exit_group(%d) = ?\n", WEXITSTATUS(status));
                     ft_printf("+++ exited with %d +++\n", WEXITSTATUS(status));
+                    pthread_mutex_unlock(&output_mutex);
                 }
-                pthread_mutex_unlock(&output_mutex);
                 TAILQ_REMOVE(&s_traced_process, current_proc, entries);
                 free(current_proc);
                 continue;
             }
             else if (WIFSIGNALED(status))
             {
-                pthread_mutex_lock(&output_mutex);
                 char *sig_name = get_signal_name(WTERMSIG(status));
+                pthread_mutex_lock(&output_mutex);
                 ft_printf("+++ killed by %s +++\n", sig_name);
                 pthread_mutex_unlock(&output_mutex);
                 TAILQ_REMOVE(&s_traced_process, current_proc, entries);
@@ -190,12 +190,20 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
 
                     table = get_syscall_table(syscall_info->arch);
                     if (!table || syscall_info->syscall_numb < 0 || syscall_info->syscall_numb >= MAX_SYSCALLS_32)
+                    {
+                        pthread_mutex_lock(&output_mutex);
                         ft_printf("syscall_%d(", (int)syscall_info->syscall_numb);
+                        pthread_mutex_unlock(&output_mutex);
+                    }
                     else
                     {
                         entry = &table[syscall_info->syscall_numb];
                         if (!entry || !entry->name)
+                        {
+                            pthread_mutex_lock(&output_mutex);
                             ft_printf("syscall_%d(", (int)syscall_info->syscall_numb);
+                            pthread_mutex_unlock(&output_mutex);
+                        }
                         else
                             print_syscall_entry(current_proc->pid, syscall_info, entry);
                     }
@@ -228,24 +236,34 @@ int ft_strace(t_syscall_info *syscall_info, char **argv, char **envp)
                 {
                     pthread_mutex_lock(&output_mutex);
                     ft_printf("--- %s {si_signo=%s, si_code=SI_KERNEL} ---\n", get_signal_name(sig), get_signal_name(sig));
+                    ft_printf("strace: Process %d detached\n", pid);
                     pthread_mutex_unlock(&output_mutex);
-                    ptrace(PTRACE_SYSCALL, current_proc->pid, NULL, sig);
-                    continue;
+                    t_traced_process *proc;
+                    TAILQ_FOREACH(proc, &s_traced_process, entries)
+                        kill(proc->pid, SIGKILL);
+                    
+                    while (!TAILQ_EMPTY(&s_traced_process))
+                    {
+                        t_traced_process *proc = TAILQ_FIRST(&s_traced_process);
+                        TAILQ_REMOVE(&s_traced_process, proc, entries);
+                        free(proc);
+                    }
+                    break;
                 }
 
                 if (sig == SIGSEGV)
                 {
-                    pthread_mutex_lock(&output_mutex);
                     if (ptrace(PTRACE_GETSIGINFO, current_proc->pid, NULL, &siginfo) == 0)
                     {
                         const char *segv_code = "SEGV_MAPERR";
                         if (siginfo.si_code == SEGV_ACCERR)
                             segv_code = "SEGV_ACCERR";
 
+                        pthread_mutex_lock(&output_mutex);
                         ft_printf("--- %s {si_signo=%s, si_code=%s, si_addr=%p} ---\n", 
                                 get_signal_name(siginfo.si_signo), get_signal_name(siginfo.si_signo), segv_code, siginfo.si_addr);
+                        pthread_mutex_unlock(&output_mutex);
                     }
-                    pthread_mutex_unlock(&output_mutex);
                     // 1. Reenviar la señal (el kernel la entregará, terminando el proceso)
                     ptrace(PTRACE_SYSCALL, current_proc->pid, NULL, sig);
                     continue;

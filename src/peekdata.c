@@ -82,12 +82,27 @@ void    ft_read_argv(pid_t pid, unsigned long addr)
         if (i > 0)
             ft_printf(", ");
         
-        // El valor leído (string_addr) es la dirección de la cadena real
-        ft_read_string_from_mem(pid, string_addr, buffer, sizeof(buffer));
-        ft_printf("\"%s\"", buffer);
-
+        if (i < 5)  // Mostrar solo los primeros 5 elementos
+        {
+            ft_read_string_from_mem(pid, string_addr, buffer, sizeof(buffer));
+            ft_printf("\"%s\"", buffer);
+        }
+        else if (i == 5)  // Luego mostrar resumen
+        {
+            ft_printf("...");
+            // Seguir contando pero no mostrar
+            while (1)
+            {
+                i++;
+                ptr_addr = addr + (i * sizeof(unsigned long));
+                result = ft_read_word(pid, ptr_addr, &string_addr);
+                if (result == -1 || string_addr == 0)
+                    break;
+            }
+            ft_printf(" /* %d vars */", i);
+            break;
+        }
         i++;
     }
-    
     ft_printf("]");
 }

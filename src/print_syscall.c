@@ -61,11 +61,11 @@ char *get_error_name(long errnum)
 
 void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *entry)
 {
-    pthread_mutex_lock(&output_mutex);
     if (info->syscall_numb < 0)
         return;
     
-    if (info->syscall_numb == 230) // SYS_clock_nanosleep
+    pthread_mutex_lock(&output_mutex);
+    if (info->syscall_numb == 230)                      // SYS_clock_nanosleep
     {
         ft_printf("%s(", entry->name);
         
@@ -88,7 +88,7 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
             ft_printf("%d", (int)info->arguments[1]);
         
         ft_printf(", %p, %p", (void *)info->arguments[2], (void *)info->arguments[3]);
-        
+
         pthread_mutex_unlock(&output_mutex);
         return;
     }
@@ -111,8 +111,6 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
     {
         ft_printf("%s(", entry->name);
         
-        // MOstrar argumentos de strace real
-        // child_stack (arg1)
         if (info->arguments[1] == 0)
             ft_printf("child_stack=NULL");
         else
@@ -143,7 +141,6 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
         else
             ft_printf("0");
         
-        // child_tidptr (arg3) - El argumento parent_tid (arg2) es el que sigue en strace real, pero lo omitimos. 
         // El orden de ft_strace está siguiendo el orden de registros (rdi, rsi, rdx, r10, r8, r9), no el de strace.
         //ft_printf(", parent_tid=%p", (void *)info->arguments[2]);           // parent_tid
         ft_printf(", child_tidptr=%p", (void *)info->arguments[3]);         // child_tid
@@ -202,7 +199,7 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
         else if ((info->syscall_numb == 59) && (i == 1 || i == 2))  // SYS_execve (59): Lectura de vector de argv/envp (i=1 y i=2)
             ft_read_argv(pid, info->arguments[i]);
 
-        // --- Manejo de FLAGS (Mmap, ioctl, access, openat) ---
+        // --- Manejo de FLAGS (mmap, ioctl, access, openat) ---
         else if (info->syscall_numb == 9 && i == 2)                 // SYS_mmap, tercer argumento (prot)
             print_flags(info->arguments[i], g_prot_flags);
         else if (info->syscall_numb == 9 && i == 3)                 // SYS_mmap, cuarto argumento (flags)
@@ -217,7 +214,7 @@ void    print_syscall_entry(pid_t pid, t_syscall_info *info, t_syscall_entry *en
                 ft_printf("AT_FDCWD, ");
             else
                 ft_printf("%d, ", (int)info->arguments[i]);
-            continue;
+            //continue;
         }
         else if (info->syscall_numb == 257 && i == 1)              // SYS_openat, segundo argumento (pathname)
         {
@@ -282,7 +279,7 @@ void    print_syscall_exit(t_syscall_info *info)
         {
             if (info->return_value < 0)
                 ft_printf(") = -1 %s\n", get_error_name(info->return_value));
-            else if ((int)info->return_value == 0)
+            else if (info->return_value == 0)
                 ft_printf(") = 0\n");                           // hijo
             else
                 ft_printf(") = %d\n", (int)info->return_value); // padre
@@ -290,7 +287,7 @@ void    print_syscall_exit(t_syscall_info *info)
             return;
         }
         
-        // ** FIX: Suprimir el retorno para exit (60) y exit_group (231) **
+        // Suprimir el retorno para exit (60) y exit_group (231) **
         if (info->syscall_numb == 60 || info->syscall_numb == 231)
         {
             ft_printf(") = ?\n");

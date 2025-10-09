@@ -38,7 +38,6 @@ void print_blocked_signals(void)
 
 int should_skip_syscall(long syscall_numb)
 {
-    (void) syscall_numb;
     long skip_list[] = {
         431,  // set_robust_list (en threads)
         158,  // arch_prctl (en threads)
